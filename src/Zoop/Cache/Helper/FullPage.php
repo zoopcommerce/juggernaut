@@ -5,10 +5,10 @@
  * @license    MIT
  */
 
-namespace Cache\Helper;
+namespace Zoop\Cache\Helper;
 
-use Cache\File;
-use Cache\CacheInterface;
+use Zoop\Cache\File;
+use Zoop\Cache\CacheInterface;
 
 class FullPage {
 
