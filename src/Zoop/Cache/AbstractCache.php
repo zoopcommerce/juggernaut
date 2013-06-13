@@ -13,6 +13,7 @@ abstract class AbstractCache {
     const QUEUING_ID = 'queued';
     const RECACHE_ID = 'recache';
 
+    protected $cache = [];
     protected $namespace = '';
     protected $valueEncoder = 'auto';
     protected $valueDecoder = 'auto';
@@ -21,8 +22,23 @@ abstract class AbstractCache {
     protected $reCacheTtl = 10; /* 10s */
     protected $queueTtl = 10; /* 10s */
 
-    protected function parseName($name) {
+    public function getId($name) {
         return md5($name);
+    }
+
+    public function get($name, $queue = true) {
+        $id = $this->getId($name);
+
+        if (isset($this->cache[$id])) {
+            return $this->cache[$id];
+        }
+        return false;
+    }
+
+    public function set($name, $value, $ttl = 600) {
+        $id = $this->getId($name);
+
+        $this->cache[$id] = $value;
     }
 
     protected function encodeValue($value) {

@@ -17,38 +17,48 @@ class File extends AbstractCache implements CacheInterface {
     }
 
     public function set($name, $value, $ttl = 600) {
+        //save the value to the local class cache
+        parent::set($name, $value, $ttl);
+
         $fileName = $this->getFileName($name);
 
         $this->writeToFile($fileName, $value, $ttl + time());
     }
 
-    public function get($name, $queue = false) {
-        $fileName = $this->getFileName($name);
+    public function get($name, $queue = true) {
+        //check to see if it's already been cached in the class
+        $value = parent::get($name, $queue);
 
-        if ($queue === true && !file_exists($fileName)) {
-            if ($this->isQueueInProgress($fileName) === true) {
-                //anonymous function to test if we should continue to wait
-                $condition = function() use ($fileName) {
-                            return !file_exists($fileName);
-                        };
-                $wait = $this->wait($condition);
-                if ($wait === false) {
-                    return false;
+        if ($value === false) {
+            $fileName = $this->getFileName($name);
+
+            if ($queue === true && !file_exists($fileName)) {
+                if ($this->isQueueInProgress($fileName) === true) {
+                    //anonymous function to test if we should continue to wait
+                    $condition = function() use ($fileName) {
+                                return !file_exists($fileName);
+                            };
+                    $wait = $this->wait($condition);
+                    if ($wait === false) {
+                        return false;
+                    }
+                } else {
+                    $this->queue($fileName);
                 }
-            } else {
-                $this->queue($fileName);
             }
-        }
 
-        $cache = $this->readFromFile($fileName);
+            $cache = $this->readFromFile($fileName);
 
-        //check ttl
-        if ($cache['value'] !== false && $cache['ttl'] < time() && $this->isReCacheInProgress($fileName) === false) {
-            //set the queue
-            $this->reCache($fileName);
-            return false;
+            //check ttl
+            if ($cache['value'] !== false && $cache['ttl'] < time() && $this->isReCacheInProgress($fileName) === false) {
+                //set the queue
+                $this->reCache($fileName);
+                return false;
+            } else {
+                return $cache['value'];
+            }
         } else {
-            return $cache['value'];
+            return $value;
         }
     }
 
@@ -97,7 +107,7 @@ class File extends AbstractCache implements CacheInterface {
     }
 
     private function getFileName($name) {
-        return $this->cacheDirectory . '/' . $this->namespace . '/' . $this->parseName($name) . '.php';
+        return $this->cacheDirectory . '/' . $this->namespace . '/' . $this->getId($name) . '.php';
     }
 
     public function setCacheDirectory($cacheDirectory) {
