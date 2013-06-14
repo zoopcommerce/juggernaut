@@ -2,18 +2,20 @@
 
 namespace Zoop\Cache\Helper\Database;
 
-use Zoop\Cache\CacheInterface;
+use Zoop\Cache\Adapters\AdapterInterface;
 
 abstract class AbstractDatabase {
-    /* @var $cacheHandler CacheInterface */
+    /* @var $adapter AdapterInterface */
 
-    protected $cacheHandler = null;
+    protected $adapter = null;
     protected $log = [];
     protected $logQueries = false;
     protected $totalExecutionTime = 0;
 
-    public function setCacheHandler(CacheInterface $handler) {
-        $this->cacheHandler = $handler;
+    public function setAdapter(AdapterInterface $handler) {
+        $this->adapter = $handler;
+        $this->adapter->setNamespace('sql');
+
         return $this;
     }
 

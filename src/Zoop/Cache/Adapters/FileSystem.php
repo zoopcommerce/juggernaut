@@ -5,32 +5,34 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache;
+namespace Zoop\Cache\Adapters;
 
-class File extends AbstractCache implements CacheInterface {
+class FileSystem extends AbstractAdapter implements AdapterInterface {
 
     //it's best to have your caching directory below the web root for security
-    private $cacheDirectory = '/tmp';
+    private $cacheDirectory = '/tmp/cache';
 
     public function __construct() {
         
     }
 
-    public function set($name, $value, $ttl = 600) {
+    public function setItem($key, $value) {
         //save the value to the local class cache
-        parent::set($name, $value, $ttl);
+        parent::setItem($key, $value);
 
-        $fileName = $this->getFileName($name);
+        $fileName = $this->getFileName($key);
 
-        $this->writeToFile($fileName, $value, $ttl + time());
+        $this->writeToFile($fileName, $value);
     }
 
-    public function get($name, $queue = true) {
+    public function getItem($key, &$success = null, $queue = true) {
         //check to see if it's already been cached in the class
-        $value = parent::get($name, $queue);
+        $value = parent::getItem($key, $success, $queue);
 
-        if ($value === false) {
-            $fileName = $this->getFileName($name);
+        if ($success === true) {
+            return $value;
+        } else {
+            $fileName = $this->getFileName($key);
 
             if ($queue === true && !file_exists($fileName)) {
                 if ($this->isQueueInProgress($fileName) === true) {
@@ -40,25 +42,29 @@ class File extends AbstractCache implements CacheInterface {
                             };
                     $wait = $this->wait($condition);
                     if ($wait === false) {
-                        return false;
+                        $success = false;
+                        return null;
                     }
                 } else {
                     $this->queue($fileName);
                 }
             }
 
-            $cache = $this->readFromFile($fileName);
+            $value = $this->readFromFile($fileName);
+            $ttl = $this->getTtl($key);
 
             //check ttl
-            if ($cache['value'] !== false && $cache['ttl'] < time() && $this->isReCacheInProgress($fileName) === false) {
+            if ($value !== false && $ttl < time() && $this->isReCacheInProgress($fileName) === false) {
                 //set the queue
                 $this->reCache($fileName);
-                return false;
+                $success = false;
+
+                return null;
             } else {
-                return $cache['value'];
+                $success = true;
+
+                return $value;
             }
-        } else {
-            return $value;
         }
     }
 
@@ -106,8 +112,9 @@ class File extends AbstractCache implements CacheInterface {
         return false;
     }
 
-    private function getFileName($name) {
-        return $this->cacheDirectory . '/' . $this->namespace . '/' . $this->getId($name) . '.php';
+    private function getFileName($key) {
+        $this->normalizeKey($key);
+        return $this->cacheDirectory . '/' . $this->namespace . '/' . $key . '.php';
     }
 
     public function setCacheDirectory($cacheDirectory) {
@@ -121,28 +128,25 @@ class File extends AbstractCache implements CacheInterface {
     }
 
     private function readFromFile($fileName) {
-        $ttl = 0;
-        $value = false;
-
         if (file_exists($fileName)) {
-            $contents = file_get_contents($fileName);
-
-            list($exit, $ttl, $rawValue) = explode("\n", $contents, 3);
-            $value = $this->decodeValue($rawValue);
-            unset($exit, $rawValue);
+            return $this->decodeValue(file_get_contents($fileName));
         }
-        return $parts = [
-            'ttl' => $ttl,
-            'value' => $value
-        ];
+
+        return null;
     }
 
-    private function writeToFile($fileName, $value, $ttl) {
+    public function getTtl($key) {
+        $fileName = $this->getFileName($key);
+        if (is_file($fileName)) {
+            return filemtime($fileName) + $this->ttl;
+        }
+        return 0;
+    }
+
+    private function writeToFile($fileName, $value) {
         try {
             if ($this->isDir()) {
-                $content = '<?php exit(0); ?>' . "\n";
-                $content .= $ttl . "\n";
-                $content .= $this->encodeValue($value);
+                $content = $this->encodeValue($value);
 
                 file_put_contents($fileName, $content, LOCK_EX);
 

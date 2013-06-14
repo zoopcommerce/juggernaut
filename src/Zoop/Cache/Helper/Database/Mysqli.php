@@ -9,21 +9,17 @@ namespace Zoop\Cache\Helper\Database;
 
 use \Exception;
 use \mysqli as db;
-use Zoop\Cache\File;
-use Zoop\Cache\CacheInterface;
+use Zoop\Cache\Adapters\AdapterInterface;
 
 class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
     private $cache = [];
     private $connection;
 
-    public function __construct(CacheInterface $cacheHandler = null, $logQueries = false) {
-        if (is_null($cacheHandler)) {
-            $this->setCacheHandler(new File());
-        } else {
-            $this->setCacheHandler($cacheHandler);
+    public function __construct(AdapterInterface $adapter = null, $logQueries = false) {
+        if (!is_null($adapter)) {
+            $this->setAdapter($adapter);
         }
-        $cacheHandler->setNamespace('sql');
 
         $this->setLogQueries($logQueries);
     }
@@ -46,20 +42,22 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         if (strpos($query, 'INSERT') !== false || strpos($query, 'UPDATE') !== false || strpos($query, 'DELETE') !== false) {
             $r = ($this->connection) ? $this->connection->query($query) : false;
         } else {
-            if (!is_null($this->cacheHandler)) {
-                $r = $this->cacheHandler->get($query);
+            if (!is_null($this->adapter)) {
+                $this->adapter->setTtl($ttl);
 
-                if ($r !== false) {
-                    $this->setCache($query, $r, $ttl);
+                $r = $this->adapter->getItem($query, $success);
+                if ($success === true) {
+                    $this->setCache($query, $r);
                 } else {
                     $r = ($this->connection) ? $this->connection->query($query) : false;
-                    $this->setCache($query, $r, $ttl);
+                    $this->setCache($query, $r);
                     $cached = false;
                 }
 
                 //set the resource id to the query so we can pull it from the file cache
                 unset($r);
-                $r = $this->cacheHandler->getId($query);
+                $r = $query;
+                $this->adapter->normalizeKey($r);
             } else {
                 $r = ($this->connection) ? $this->connection->query($query) : false;
             }
@@ -78,19 +76,21 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         return $r;
     }
 
-    private function setCache($name, $result, $ttl) {
-        $cacheId = $this->cacheHandler->getId($name);
-        if (!isset($this->cache[$cacheId])) {
+    private function setCache($key, $result) {
+        $rawKey = $key;
+        $this->adapter->normalizeKey($key);
+        if (!isset($this->cache[$key])) {
             if (gettype($result) == 'object' && is_a($result, 'mysqli_result')) {
                 $data = $this->getAllRows($result);
-                $this->cacheHandler->set($name, $data, $ttl);
-                $this->cache[$cacheId] = $data;
+
+                $this->adapter->setItem($rawKey, $data);
+                $this->cache[$key] = $data;
             } else {
-                $this->cache[$cacheId] = $result;
+                $this->cache[$key] = $result;
             }
         } else {
-            if (is_array($this->cache[$result])) {
-                reset($this->cache[$cacheId]);
+            if (is_array($this->cache[$key])) {
+                reset($this->cache[$key]);
             }
         }
     }

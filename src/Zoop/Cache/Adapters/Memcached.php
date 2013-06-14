@@ -5,19 +5,19 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache;
+namespace Zoop\Cache\Adapters;
 
-class Memcached extends AbstractCache implements CacheInterface {
+class Memcached extends AbstractAdapter implements AdapterInterface {
 
     public function __construct() {
         
     }
 
-    public function set($name, $value, $ttl = 600, $force = false) {
+    public function setItem($name, $value, $ttl = 600, $force = false) {
         
     }
 
-    public function get($name, $queue = false) {
+    public function getItem($name, $queue = false) {
         
     }
 

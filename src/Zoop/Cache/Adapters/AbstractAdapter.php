@@ -5,9 +5,9 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache;
+namespace Zoop\Cache\Adapters;
 
-abstract class AbstractCache {
+abstract class AbstractAdapter {
 
     const CODEC_AUTO = 'auto';
     const QUEUING_ID = 'queued';
@@ -21,24 +21,32 @@ abstract class AbstractCache {
     protected $queueMaxTries = 5;
     protected $reCacheTtl = 10; /* 10s */
     protected $queueTtl = 10; /* 10s */
+    protected $ttl = 30; /* 30s */
 
-    public function getId($name) {
-        return md5($name);
+    public function normalizeKey(&$key) {
+        $key = md5($key);
     }
 
-    public function get($name, $queue = true) {
-        $id = $this->getId($name);
+    public function getItem($key, &$success = null, $queue = true) {
+        $this->normalizeKey($key);
 
-        if (isset($this->cache[$id])) {
-            return $this->cache[$id];
+        if (isset($this->cache[$key])) {
+            $success = true;
+            return $this->cache[$key];
         }
-        return false;
+        $success = false;
+
+        return null;
     }
 
-    public function set($name, $value, $ttl = 600) {
-        $id = $this->getId($name);
+    public function setItem($key, $value) {
+        $this->normalizeKey($key);
 
-        $this->cache[$id] = $value;
+        $this->cache[$key] = $value;
+    }
+
+    public function setTtl($ttl) {
+        $this->ttl = intval($ttl);
     }
 
     protected function encodeValue($value) {
@@ -99,10 +107,11 @@ abstract class AbstractCache {
         return $this;
     }
 
+    // exponential backoff
     protected function wait($conditionFunction) {
         $numTries = 0;
         do {
-            usleep($this->queueWaitPeriod + ($this->queueWaitPeriod * pow(2, $numTries))); // exponential backoff
+            usleep($this->queueWaitPeriod + ($this->queueWaitPeriod * pow(2, $numTries)));
             $numTries++;
 
             if ($numTries >= $this->queueMaxTries) {
