@@ -8,20 +8,20 @@
 namespace Zoop\Cache\Helper;
 
 use Zoop\Cache\Adapters\FileSystem;
-use Zoop\Cache\AdapterInterface;
+use Zoop\Cache\Adapters\AdapterInterface;
 
 class FullPage {
 
-    private $handler;
+    private $adapter;
     private $auto = true;
 
-    public function __construct(AdapterInterface $handler = null, $ttl = 300, $auto = true) {
-        if (is_null($handler)) {
-            $this->handler = new FileSystem();
+    public function __construct(AdapterInterface $adapter = null, $ttl = 300, $auto = true) {
+        if (is_null($adapter)) {
+            $this->adapter = new FileSystem();
         } else {
-            $this->handler = $handler;
+            $this->adapter = $adapter;
         }
-        $this->handler->setTtl($ttl);
+        $this->adapter->setTtl($ttl);
 
         $this->auto = $auto;
 
@@ -32,8 +32,7 @@ class FullPage {
 
     public function start() {
         $key = $this->getFileName();
-
-        $cache = $this->handler->getItem($key, $success);
+        $cache = $this->adapter->getItem($key, $success);
 
         if ($success === false) {
             ob_start();
@@ -47,12 +46,12 @@ class FullPage {
     }
 
     public function end() {
-        $this->handler->setItem($this->getFileName(), ob_get_contents());
+        $this->adapter->setItem($this->getFileName(), ob_get_contents());
         ob_end_flush();
     }
 
-    public function setHandler(AdapterInterface $handler) {
-        $this->handler = $handler;
+    public function setHandler(AdapterInterface $adapter) {
+        $this->adapter = $adapter;
         return $this;
     }
 

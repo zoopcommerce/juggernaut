@@ -39,10 +39,10 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         $time = microtime(true);
         $cached = true;
 
-        if (strpos($query, 'INSERT') !== false || strpos($query, 'UPDATE') !== false || strpos($query, 'DELETE') !== false) {
+        if (strpos($query, 'INSERT') !== false || strpos($query, 'NOW()') !== false || strpos($query, 'UPDATE') !== false || strpos($query, 'DELETE') !== false) {
             $r = ($this->connection) ? $this->connection->query($query) : false;
         } else {
-            if (!is_null($this->adapter)) {
+            if (!is_null($this->adapter) && $ttl != 0) {
                 $this->adapter->setTtl($ttl);
 
                 $r = $this->adapter->getItem($query, $success);

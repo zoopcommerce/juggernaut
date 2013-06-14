@@ -19,7 +19,6 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
     public function setItem($key, $value) {
         //save the value to the local class cache
         parent::setItem($key, $value);
-
         $fileName = $this->getFileName($key);
 
         $this->writeToFile($fileName, $value);
@@ -44,26 +43,29 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
                     if ($wait === false) {
                         $success = false;
                         return null;
+                    } else {
+                        $success = true;
+                        return $this->readFromFile($fileName);
                     }
                 } else {
                     $this->queue($fileName);
+                    $success = false;
+                    return null;
                 }
-            }
-
-            $value = $this->readFromFile($fileName);
-            $ttl = $this->getTtl($key);
-
-            //check ttl
-            if ($value !== false && $ttl < time() && $this->isReCacheInProgress($fileName) === false) {
-                //set the queue
-                $this->reCache($fileName);
-                $success = false;
-
-                return null;
             } else {
-                $success = true;
+                $ttl = $this->getTtl($key);
 
-                return $value;
+                if ($ttl < time() && $this->isReCacheInProgress($fileName) === false) {
+                    //set the queue
+                    $this->reCache($fileName);
+                    $success = false;
+                    return null;
+                } else {
+                    $success = true;
+                    $value = $this->readFromFile($fileName);
+
+                    return $value;
+                }
             }
         }
     }
@@ -137,7 +139,7 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
 
     public function getTtl($key) {
         $fileName = $this->getFileName($key);
-        if (is_file($fileName)) {
+        if (is_file($fileName) && $this->ttl != 0) {
             return filemtime($fileName) + $this->ttl;
         }
         return 0;
