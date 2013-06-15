@@ -26,6 +26,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
     public function connect($host, $user, $password, $database, $port = 3306, $persistency = false) {
         try {
+            $port = !empty($port) ? int_val($port) : 3306;
             $this->connection = new db($host, $user, $password, $database, $port);
             if ($this->connection->connect_errno) {
                 die("Failed to connect to MySQL: " . $this->connection->connect_error);
