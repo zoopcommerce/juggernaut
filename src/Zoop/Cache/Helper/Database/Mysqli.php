@@ -15,6 +15,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
     private $cache = [];
     private $connection;
+    private $transactionInProgress = false;
 
     public function __construct(AdapterInterface $adapter = null, $logQueries = false) {
         if (!is_null($adapter)) {
@@ -26,7 +27,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
     public function connect($host, $user, $password, $database, $port = 3306, $persistency = false) {
         try {
-            $port = !empty($port) ? int_val($port) : 3306;
+            $port = !empty($port) ? intval($port) : 3306;
             $this->connection = new db($host, $user, $password, $database, $port);
             if ($this->connection->connect_errno) {
                 die("Failed to connect to MySQL: " . $this->connection->connect_error);
@@ -40,7 +41,12 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         $time = microtime(true);
         $cached = true;
 
-        if (strpos($query, 'INSERT') !== false || strpos($query, 'NOW()') !== false || strpos($query, 'UPDATE') !== false || strpos($query, 'DELETE') !== false) {
+        if (
+                strpos($query, 'INSERT') !== false ||
+                strpos($query, 'UPDATE') !== false ||
+                strpos($query, 'DELETE') !== false ||
+                $this->transactionInProgress === true
+        ) {
             $r = ($this->connection) ? $this->connection->query($query) : false;
         } else {
             if (!is_null($this->adapter) && $ttl != 0) {
@@ -139,8 +145,40 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         return ($result) ? $result->fetch_fields() : false;
     }
 
-    public function transaction() {
-        
+    public function transaction($status = 'begin') {
+        switch ($status) {
+            case 'begin':
+                $this->transactionInProgress = true;
+                return $this->connection->autocommit(false);
+                break;
+
+            case 'commit':
+                $this->transactionInProgress = false;
+                return $this->connection->commit();
+                break;
+
+            case 'rollback':
+                $this->transactionInProgress = false;
+                return $this->connection->rollback();
+                break;
+        }
+
+        return true;
+    }
+
+    public function beginTransaction() {
+        $this->transactionInProgress = true;
+        return $this->connection->autocommit(false);
+    }
+
+    public function commitTransaction() {
+        $this->transactionInProgress = false;
+        return $this->connection->commit();
+    }
+
+    public function rollbackTransaction() {
+        $this->transactionInProgress = false;
+        return $this->connection->rollback();
     }
 
     public function close() {
