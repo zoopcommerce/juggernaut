@@ -14,6 +14,7 @@ class FullPage {
 
     private $adapter;
     private $auto = true;
+    private $compress = true;
 
     public function __construct(AdapterInterface $adapter = null, $ttl = 300, $auto = true) {
         if (is_null($adapter)) {
@@ -46,7 +47,14 @@ class FullPage {
     }
 
     public function end() {
-        $this->adapter->setItem($this->getFileName(), ob_get_contents());
+        $html = ob_get_contents();
+        if ($this->compress) {
+            //remove new lines
+            $html = str_replace("\n", "", $html);
+            //remove double spaces
+            $html = preg_replace("/\s{2,}/", '', $html);
+        }
+        $this->adapter->setItem($this->getFileName(), $html);
         ob_end_flush();
     }
 
