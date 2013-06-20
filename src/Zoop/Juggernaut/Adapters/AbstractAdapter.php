@@ -5,7 +5,7 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache\Adapters;
+namespace Zoop\Juggernaut\Adapters;
 
 abstract class AbstractAdapter {
 
@@ -13,7 +13,7 @@ abstract class AbstractAdapter {
     const QUEUING_ID = 'queued';
     const RECACHE_ID = 'recache';
 
-    protected $cache = [];
+    protected $cache = array();
     protected $namespace = '';
     protected $valueEncoder = 'auto';
     protected $valueDecoder = 'auto';

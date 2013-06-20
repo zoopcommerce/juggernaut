@@ -5,15 +5,15 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache\Helper\Database;
+namespace Zoop\Juggernaut\Helper\Database;
 
 use \Exception;
 use \mysqli as db;
-use Zoop\Cache\Adapters\AdapterInterface;
+use Zoop\Juggernaut\Adapters\AdapterInterface;
 
 class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
-    private $cache = [];
+    private $cache = array();
     private $connection;
     private $transactionInProgress = false;
 
@@ -74,11 +74,11 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
         $executionTime = (microtime(true) - $time);
         if ($this->logQueries === true) {
-            $this->log[] = [
+            $this->log[] = array(
                 'time' => $executionTime,
                 'query' => $query,
                 'cached' => $cached
-            ];
+            );
         }
         $this->totalExecutionTime += $executionTime;
 
@@ -105,7 +105,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
     }
 
     private function getAllRows($result) {
-        $data = [];
+        $data = array();
         while ($row = $this->fetchRow($result)) {
             $data[] = $row;
         }
@@ -188,8 +188,8 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
     }
 
     public function getLog($orderBy = 'execution') {
-        $queries = [];
-        $time = [];
+        $queries = array();
+        $time = array();
         $data = $this->log;
 
         if ($orderBy == 'slowest') {
@@ -200,10 +200,10 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
             array_multisort($time, SORT_DESC, $queries, SORT_ASC, $data);
         }
 
-        return [
+        return array(
             'queries' => $data,
             'totalExecutionTime' => $this->totalExecutionTime
-        ];
+        );
     }
 
 }

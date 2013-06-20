@@ -5,7 +5,7 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache\Adapters;
+namespace Zoop\Juggernaut\Adapters;
 
 class Memcached extends AbstractAdapter implements AdapterInterface {
 

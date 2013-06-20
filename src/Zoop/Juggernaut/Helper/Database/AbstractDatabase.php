@@ -1,14 +1,14 @@
 <?php
 
-namespace Zoop\Cache\Helper\Database;
+namespace Zoop\Juggernaut\Helper\Database;
 
-use Zoop\Cache\Adapters\AdapterInterface;
+use Zoop\Juggernaut\Adapters\AdapterInterface;
 
 abstract class AbstractDatabase {
     /* @var $adapter AdapterInterface */
 
     protected $adapter = null;
-    protected $log = [];
+    protected $log = array();
     protected $logQueries = false;
     protected $totalExecutionTime = 0;
 

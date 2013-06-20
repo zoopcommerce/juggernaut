@@ -5,10 +5,10 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache\Helper;
+namespace Zoop\Juggernaut\Helper;
 
-use Zoop\Cache\Adapters\FileSystem;
-use Zoop\Cache\Adapters\AdapterInterface;
+use Zoop\Juggernaut\Adapters\FileSystem;
+use Zoop\Juggernaut\Adapters\AdapterInterface;
 
 class FullPage {
 
@@ -38,7 +38,7 @@ class FullPage {
         if ($success === false) {
             ob_start();
             if ($this->auto === true) {
-                register_shutdown_function([$this, 'end']);
+                register_shutdown_function(array($this, 'end'));
             }
         } else {
             echo $cache;

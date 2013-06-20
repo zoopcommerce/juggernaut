@@ -1,4 +1,4 @@
-php-cache
+Juggernaut
 =========
 
-A caching module for PHP that can use a multitude of different handlers; file, memcached, apc etc
+A super fast and simple caching module for PHP.

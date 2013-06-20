@@ -5,7 +5,7 @@
  * @license    MIT
  */
 
-namespace Zoop\Cache\Helper\Database;
+namespace Zoop\Juggernaut\Helper\Database;
 
 interface DatabaseInterface {
 

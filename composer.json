@@ -1,9 +1,9 @@
 {
-    "name": "zoopcommerce/php-cache",
+    "name": "zoopcommerce/juggernaut",
     "type": "library",
-    "description": "A caching module for PHP that includes handlers for Files, APC and Memcached. It also includes a number of helper classes for DB caching and fulle page cache",
+    "description": "A caching module for PHP that includes adapters for File System, APC and Memcached. It also includes a number of helper classes for DB caching and full page cache",
     "keywords": ["caching", "php"],
-    "homepage": "http://github.com/zoopcommerce/php-cache",
+    "homepage": "http://github.com/zoopcommerce/juggernaut",
     "license": "MIT",
     "authors": [
         {
