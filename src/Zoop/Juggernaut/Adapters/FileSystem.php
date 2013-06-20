@@ -12,8 +12,10 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
     //it's best to have your caching directory below the web root for security
     private $cacheDirectory = '/tmp/cache';
 
-    public function __construct() {
-        
+    public function __construct($cacheDirectory = null) {
+        if (!is_null($cacheDirectory)) {
+            $this->setCacheDirectory($cacheDirectory);
+        }
     }
 
     public function setItem($key, $value) {
