@@ -31,6 +31,10 @@ class FullPage {
         }
     }
 
+    public function setTtl($ttl) {
+        $this->adapter->setTtl($ttl);
+    }
+
     public function start() {
         $key = $this->getFileName();
         $cache = $this->adapter->getItem($key, $success);
@@ -50,7 +54,7 @@ class FullPage {
         $html = ob_get_contents();
         if ($this->compress) {
             //remove new lines
-            $html = str_replace("\n", "", $html);
+            $html = str_replace("\n", '', $html);
             //remove double spaces
             $html = preg_replace("/\s{2,}/", '', $html);
         }
