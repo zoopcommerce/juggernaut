@@ -7,7 +7,7 @@
 
 namespace Zoop\Juggernaut\Adapters;
 
-class Memcached extends AbstractAdapter implements AdapterInterface {
+class MySql extends AbstractAdapter implements AdapterInterface {
 
     public function __construct() {
         
