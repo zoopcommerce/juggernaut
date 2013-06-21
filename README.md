@@ -4,7 +4,9 @@
 
 Juggernaut is a super fast PHP cache. It has a number of storage adapters and a few simple helpers to get you up and caching quickly.
 
-One of the best aspects of this module is that it provides **flood protection** both on the initial cache creation - by queuing subsequent requests - but also on re-caching - by serving old cache for subsequent requests until the new cache has been re-created. These two features allow Juggernaut to be at least **100%** faster than the [Zend Framework 2 cache adapters](http://framework.zend.com/manual/2.2/en/modules/zend.cache.storage.adapter.html) in normal use, and up to **270%** faster on highly concurrent applications.
+One of the best aspects of this module is that it provides **flood protection** both on the initial cache creation - *by queuing subsequent requests* - but also on re-caching - *by serving old cache for subsequent requests until the new cache has been re-created*. 
+
+These two features allow Juggernaut to be at least **100%** faster than the [Zend Framework 2 cache adapters](http://framework.zend.com/manual/2.2/en/modules/zend.cache.storage.adapter.html) in normal use, and up to **270%** faster on highly concurrent applications.
 
 ## Installation
 
