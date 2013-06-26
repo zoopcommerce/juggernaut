@@ -43,6 +43,7 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
                             };
                     $wait = $this->wait($condition);
                     if ($wait === false) {
+                        $this->clearQueue($key);
                         $success = false;
                         return null;
                     } else {
@@ -76,7 +77,7 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         if ($this->isDir()) {
             $queueFile = $this->getQueuedId($fileName);
             if (!is_file($queueFile)) {
-                file_put_contents($queueFile, (time() + $this->queueTtl));
+                @file_put_contents($queueFile, (time() + $this->queueTtl));
             }
         }
     }
@@ -85,15 +86,15 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
         if ($this->isDir()) {
             $queueFile = $this->getReCacheId($fileName);
             if (!is_file($queueFile)) {
-                file_put_contents($queueFile, (time() + $this->reCacheTtl));
+                @file_put_contents($queueFile, (time() + $this->reCacheTtl));
             }
         }
     }
 
     public function isReCacheInProgress($fileName) {
         $reCacheFile = $this->getReCacheId($fileName);
-        if (is_file($reCacheFile)) {
-            $ttl = file_get_contents($reCacheFile);
+        if (is_file($reCacheFile) && $this->isDir()) {
+            $ttl = @file_get_contents($reCacheFile);
             if ($ttl > time()) {
                 return true;
             } else {
@@ -105,8 +106,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
 
     public function isQueueInProgress($fileName) {
         $queueFile = $this->getQueuedId($fileName);
-        if (is_file($queueFile)) {
-            $ttl = file_get_contents($queueFile);
+        if (is_file($queueFile) && $this->isDir()) {
+            $ttl = @file_get_contents($queueFile);
             if ($ttl > time()) {
                 return true;
             } else {
@@ -132,8 +133,8 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
     }
 
     private function readFromFile($fileName) {
-        if (file_exists($fileName)) {
-            return $this->decodeValue(file_get_contents($fileName));
+        if (file_exists($fileName) === true) {
+            return $this->decodeValue(@file_get_contents($fileName));
         }
 
         return null;
@@ -141,7 +142,7 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
 
     public function getTtl($key) {
         $fileName = $this->getFileName($key);
-        if (is_file($fileName) && $this->ttl != 0) {
+        if (is_file($fileName) === true && $this->ttl != 0) {
             return filemtime($fileName) + $this->ttl;
         }
         return 0;
@@ -152,8 +153,7 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
             if ($this->isDir()) {
                 $content = $this->encodeValue($value);
 
-                file_put_contents($fileName, $content, LOCK_EX);
-
+                @file_put_contents($fileName, $content, LOCK_EX);
                 $this->removeTempFiles($fileName);
             }
         } catch (\Exception $e) {
@@ -163,21 +163,33 @@ class FileSystem extends AbstractAdapter implements AdapterInterface {
 
     private function removeTempFiles($fileName) {
         $queingFile = $this->getQueuedId($fileName);
-        if (is_file($queingFile)) {
+        if (is_file($queingFile) === true) {
             @unlink($queingFile);
         }
 
         $reCacheFile = $this->getReCacheId($fileName);
-        if (is_file($reCacheFile)) {
+        if (is_file($reCacheFile) === true) {
             @unlink($reCacheFile);
         }
     }
 
     private function isDir() {
         if (!is_dir($this->cacheDirectory . '/' . $this->namespace)) {
-            return mkdir($this->cacheDirectory . '/' . $this->namespace, 0755, true);
+            return @mkdir($this->cacheDirectory . '/' . $this->namespace, 0755, true);
         }
         return true;
+    }
+
+    public function clearQueue($key = null) {
+        if (is_null($key)) {
+            foreach (glob('*.' . self::QUEUING_ID) as $key) {
+                $fileName = str_replace('.' . self::QUEUING_ID, '', $key);
+                $this->removeTempFiles($fileName);
+            }
+        } else {
+            $fileName = $this->getFileName($key);
+            $this->removeTempFiles($fileName);
+        }
     }
 
 }

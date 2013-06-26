@@ -13,13 +13,15 @@ interface AdapterInterface {
 
     public function getItem($key, &$success = null, $queue = false);
 
-    public function queue($id);
+    public function queue($key);
+    
+    public function clearQueue($key = null);
 
-    public function reCache($id);
+    public function reCache($key);
 
-    public function isReCacheInProgress($id);
+    public function isReCacheInProgress($key);
 
-    public function isQueueInProgress($id);
+    public function isQueueInProgress($key);
 
     public function normalizeKey(&$key);
 

@@ -24,7 +24,8 @@ abstract class AbstractAdapter {
     protected $ttl = 30; /* 30s */
 
     public function normalizeKey(&$key) {
-        $key = md5($key);
+        //less collision than md5 but takes a small performance hit
+        $key = sha1($key);
     }
 
     public function getItem($key, &$success = null, $queue = true) {

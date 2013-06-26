@@ -42,6 +42,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
     public function query($query, $ttl = 0) {
         $time = microtime(true);
         $cached = true;
+        $ttl = intval($ttl);
 
         if (
                 strpos($query, 'INSERT') !== false ||
@@ -59,7 +60,12 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
                     $this->setCache($query, $r);
                 } else {
                     $r = ($this->connection) ? $this->connection->query($query) : false;
-                    $this->setCache($query, $r);
+                    if ($r !== false) {
+                        $this->setCache($query, $r);
+                    } else {
+                        //clear the queue to ensure no lingering queues which will prevent the next load
+                        $this->adapter->clearQueue($query);
+                    }
                     $cached = false;
                 }
 

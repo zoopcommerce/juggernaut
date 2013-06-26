@@ -10,6 +10,7 @@ namespace Zoop\Juggernaut\Adapters;
 use \MongoClient;
 use \MongoCursorException;
 use \MongoId;
+use \MongoRegex;
 
 class MongoDB extends AbstractAdapter implements AdapterInterface {
 
@@ -106,14 +107,14 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
 
     public function getFromMongo($id) {
         return $this->mongo()->findOne(array(
-            '_id' => $id
+                    '_id' => $id
         ));
     }
 
-    public function queue($id) {
+    public function queue($key) {
         try {
             $this->mongo()->insert(array(
-                '_id' => $this->getQueuedId($id),
+                '_id' => $this->getQueuedId($key),
                 'ttl' => (time() + $this->queueTtl)
             ));
         } catch (MongoCursorException $e) {
@@ -121,10 +122,10 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function reCache($id) {
+    public function reCache($key) {
         try {
             $this->mongo()->insert(array(
-                '_id' => $this->getReCacheId($id),
+                '_id' => $this->getReCacheId($key),
                 'ttl' => (time() + $this->reCacheTtl)
             ));
         } catch (MongoCursorException $e) {
@@ -132,35 +133,35 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function isReCacheInProgress($id) {
-        $id = $this->getReCacheId($id);
+    public function isReCacheInProgress($key) {
+        $key = $this->getReCacheId($key);
 
         $reCache = $this->mongo()->findOne(array(
-            '$id' => $id
+            '$id' => $key
         ));
 
         if (!is_null($reCache)) {
             if ($reCache['ttl'] > time()) {
                 return true;
             } else {
-                $this->mongo()->remove(array('$id' => $id));
+                $this->mongo()->remove(array('$id' => $key));
             }
         }
         return false;
     }
 
-    public function isQueueInProgress($id) {
-        $id = $this->getQueuedId($id);
+    public function isQueueInProgress($key) {
+        $key = $this->getQueuedId($key);
 
         $reCache = $this->mongo()->findOne(array(
-            '$id' => $id
+            '$id' => $key
         ));
 
         if (!is_null($reCache)) {
             if ($reCache['ttl'] > time()) {
                 return true;
             } else {
-                $this->mongo()->remove(array('$id' => $id));
+                $this->mongo()->remove(array('$id' => $key));
             }
         }
         return false;
@@ -189,6 +190,17 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
 
         $this->mongo()->remove(array('_id' => $qId));
         $this->mongo()->remove(array('_id' => $rId));
+    }
+
+    public function clearQueue($key = null) {
+        if (is_null($key)) {
+            $this->mongo()->remove(array('_id' => new MongoRegex('/.*\.' . self::QUEUING_ID . '/')));
+            $this->mongo()->remove(array('_id' => new MongoRegex('/.*\.' . self::RECACHE_ID . '/')));
+        } else {
+            $id = $key;
+            $this->normalizeKey($id);
+            $this->removeTempFiles($id);
+        }
     }
 
 }
