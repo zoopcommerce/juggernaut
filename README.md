@@ -31,7 +31,7 @@ You can use Juggernaut by directly instantiating a storage adapter and calling s
 // you should always store the cache below the web root for security!!
 $cacheDirectory = __DIR__ . '../cache';
 
-$cache = new Zoop\Juggernaut\Adapters\FileSystem(cacheDirectory);
+$cache = new Zoop\Juggernaut\Adapters\FileSystem($cacheDirectory);
 
 $key = 'yourUniqueKey';
 
