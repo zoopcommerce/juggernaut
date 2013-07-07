@@ -13,9 +13,9 @@ use Zoop\Juggernaut\Adapters\AdapterInterface;
 
 class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
-    private $cache = array();
-    private $connection;
-    private $transactionInProgress = false;
+    protected $cache = array();
+    protected $connection;
+    protected $transactionInProgress = false;
 
     public function __construct(AdapterInterface $adapter = null, $logQueries = false) {
         if (!is_null($adapter)) {
@@ -23,6 +23,15 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
         }
 
         $this->setLogQueries($logQueries);
+    }
+
+    public function __destruct() {
+        if ($this->displayErrors === true) {
+            $errors = $this->getErrors();
+            if (!empty($errors)) {
+                trigger_error(print_r($errors, true), E_USER_ERROR);
+            }
+        }
     }
 
     public function connect($host, $user, $password, $database, $port = 3306, $persistency = false) {
@@ -48,11 +57,15 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
                 strpos($query, 'INSERT') !== false ||
                 strpos($query, 'UPDATE') !== false ||
                 strpos($query, 'DELETE') !== false ||
-                $this->transactionInProgress === true
+                $this->transactionInProgress === true ||
+                $ttl == 0
         ) {
             $r = ($this->connection) ? $this->connection->query($query) : false;
+            if ($r === false) {
+                $this->addError($query);
+            }
         } else {
-            if (!is_null($this->adapter) && $ttl != 0) {
+            if (!is_null($this->adapter)) {
                 $this->adapter->setTtl($ttl);
 
                 $r = $this->adapter->getItem($query, $success);
@@ -63,6 +76,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
                     if ($r !== false) {
                         $this->setCache($query, $r);
                     } else {
+                        $this->addError($query);
                         //clear the queue to ensure no lingering queues which will prevent the next load
                         $this->adapter->clearQueue($query);
                     }
@@ -75,6 +89,9 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
                 $this->adapter->normalizeKey($r);
             } else {
                 $r = ($this->connection) ? $this->connection->query($query) : false;
+                if ($r === false) {
+                    $this->addError($query);
+                }
             }
         }
 
@@ -190,26 +207,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
     }
 
     public function close() {
-        return ($this->connection) ? $this->connection->close() : false;
-    }
-
-    public function getLog($orderBy = 'execution') {
-        $queries = array();
-        $time = array();
-        $data = $this->log;
-
-        if ($orderBy == 'slowest') {
-            foreach ($this->log as $key => $row) {
-                $queries[$key] = $row['query'];
-                $time[$key] = $row['time'];
-            }
-            array_multisort($time, SORT_DESC, $queries, SORT_ASC, $data);
-        }
-
-        return array(
-            'queries' => $data,
-            'totalExecutionTime' => $this->totalExecutionTime
-        );
+        return (get_class($this->connection) == 'mysqli') ? @$this->connection->close() : false;
     }
 
 }
