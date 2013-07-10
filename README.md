@@ -4,7 +4,7 @@
 
 Juggernaut is a super fast PHP cache. It has a number of storage adapters and a few simple helpers to get you up and caching quickly.
 
-One of the best aspects of this module is that it provides **flood protection** both on the initial cache creation - *by queuing subsequent requests* - but also on re-caching - *by serving old cache for subsequent requests until the new cache has been re-created*. 
+One of the best aspects of this module is that it provides **flood protection** both on the initial cache creation - *by queuing subsequent requests* - but also on re-caching - *by serving old cache for subsequent requests until the new cache has been re-created*.
 
 These two features allow Juggernaut to be at least **100%** faster than the [Zend Framework 2 cache adapters](http://framework.zend.com/manual/2.2/en/modules/zend.cache.storage.adapter.html) in normal use, and up to **270%** faster on highly concurrent applications.
 
@@ -31,7 +31,7 @@ You can use Juggernaut by directly instantiating a storage adapter and calling s
 // you should always store the cache below the web root for security!!
 $cacheDirectory = __DIR__ . '../cache';
 
-$cache = new Zoop\Juggernaut\Adapters\FileSystem($cacheDirectory);
+$cache = new Zoop\Juggernaut\Adapter\FileSystem($cacheDirectory);
 
 $key = 'yourUniqueKey';
 
@@ -59,7 +59,7 @@ $database='MyMongoDb';
 $username='mymongouser';
 $password='mymongopass';
 
-$cache = new Zoop\Juggernaut\Adapters\MongoDB($database, $username, $password);
+$cache = new Zoop\Juggernaut\Adapter\MongoDB($database, $username, $password);
 
 $key = 'yourUniqueKey';
 
@@ -90,7 +90,7 @@ if ($success === false) {
 //coming soon
 ```
 ### Helpers
-There are a few helpers that will expidite the usage of Juggernaut. 
+There are a few helpers that will expidite the usage of Juggernaut.
 #### Full Page
 As the name suggests, the "Full Page" helper will store the rendered page directly to cache. This results in blindingly fast page loads.
 
@@ -99,7 +99,7 @@ To use this script just place the following at the top of your pages.
 $pageTtl = 600; //10 mins
 $cacheDirectory = __DIR__ . '../cache';
 
-$adapter = new Zoop\Juggernaut\Adapters\FileSystem($cacheDirectory);
+$adapter = new Zoop\Juggernaut\Adapter\FileSystem($cacheDirectory);
 
 $pageCache = new Zoop\Juggernaut\Helper\FullPage($adapter, $pageTtl);
 ```
@@ -110,7 +110,7 @@ $database='MyMongoDb';
 $username='mymongouser';
 $password='mymongopass';
 
-$adapter = new Zoop\Juggernaut\Adapters\MongoDB($database, $username, $password);
+$adapter = new Zoop\Juggernaut\Adapter\MongoDB($database, $username, $password);
 
 $pageCache = new Zoop\Juggernaut\Helper\FullPage($adapter, $pageTtl);
 
@@ -121,7 +121,7 @@ There's no need to manually save the rendered page to cache as the script will a
 You can use the mysqli helper to automatically cache your sql queries.
 ```php
 $cacheDirectory = __DIR__ . '../cache';
-$adapter = new Zoop\Juggernaut\Adapters\FileSystem($cacheDirectory);
+$adapter = new Zoop\Juggernaut\Adapter\FileSystem($cacheDirectory);
 
 $db = new Zoop\Juggernaut\Helper\Database\Mysqli($cache);
 $db->connect($host, $username, $passwd, $database);

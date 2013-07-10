@@ -2,7 +2,7 @@
 
 namespace Zoop\Juggernaut\Helper\Database;
 
-use Zoop\Juggernaut\Adapters\AdapterInterface;
+use Zoop\Juggernaut\Adapter\AdapterInterface;
 
 abstract class AbstractDatabase {
     /* @var $adapter AdapterInterface */

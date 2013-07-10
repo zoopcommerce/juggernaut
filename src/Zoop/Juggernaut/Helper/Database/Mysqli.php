@@ -9,7 +9,7 @@ namespace Zoop\Juggernaut\Helper\Database;
 
 use \Exception;
 use \mysqli as db;
-use Zoop\Juggernaut\Adapters\AdapterInterface;
+use Zoop\Juggernaut\Adapter\AdapterInterface;
 
 class Mysqli extends AbstractDatabase implements DatabaseInterface {
 

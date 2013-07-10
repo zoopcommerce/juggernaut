@@ -7,8 +7,8 @@
 
 namespace Zoop\Juggernaut\Helper;
 
-use Zoop\Juggernaut\Adapters\FileSystem;
-use Zoop\Juggernaut\Adapters\AdapterInterface;
+use Zoop\Juggernaut\Adapter\FileSystem;
+use Zoop\Juggernaut\Adapter\AdapterInterface;
 
 class FullPage {
 

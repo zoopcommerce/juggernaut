@@ -5,7 +5,7 @@
  * @license    MIT
  */
 
-namespace Zoop\Juggernaut\Adapters;
+namespace Zoop\Juggernaut\Adapter;
 
 abstract class AbstractAdapter {
 
