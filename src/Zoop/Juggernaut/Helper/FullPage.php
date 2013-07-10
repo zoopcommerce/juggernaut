@@ -68,7 +68,13 @@ class FullPage {
     }
 
     private function getFileName() {
-        return $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        if ((isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https')) {
+            $protocol = 'https://';
+        } else {
+            $protocol = 'http://';
+        }
+        $fileName = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        return $fileName;
     }
 
 }
