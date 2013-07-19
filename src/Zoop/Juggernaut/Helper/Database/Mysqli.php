@@ -153,7 +153,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
             return false;
         }
     }
-
+    
     public function getInsertedId() {
         return ($this->connection) ? $this->connection->insert_id : false;
     }
