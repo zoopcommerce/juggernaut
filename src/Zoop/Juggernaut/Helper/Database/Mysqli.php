@@ -153,7 +153,7 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
             return false;
         }
     }
-    
+
     public function getInsertedId() {
         return ($this->connection) ? $this->connection->insert_id : false;
     }
@@ -167,7 +167,13 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
     }
 
     public function getFields($result) {
-        return ($result) ? $result->fetch_fields() : false;
+        if (gettype($result) == 'object') {
+            return $result->fetch_fields();
+        } else if (is_array($result) && !empty($result)) {
+            return array_keys($result);
+        }
+
+        return false;
     }
 
     public function transaction($status = 'begin') {
