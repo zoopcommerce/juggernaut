@@ -23,7 +23,7 @@ class FullPage {
 
     public function setAuto($auto)
     {
-        $this->auto = $auto;
+        $this->auto = (boolean) $auto;
     }
 
     public function getCompress()
@@ -33,7 +33,7 @@ class FullPage {
 
     public function setCompress($compress)
     {
-        $this->compress = $compress;
+        $this->compress = (boolean) $compress;
     }
 
     public function getAdapter()
@@ -41,7 +41,7 @@ class FullPage {
         return $this->adapter;
     }
 
-    public function setAdapter($adapter)
+    public function setAdapter(AdapterInterface $adapter)
     {
         $this->adapter = $adapter;
     }
