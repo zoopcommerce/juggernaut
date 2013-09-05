@@ -102,6 +102,7 @@ $cacheDirectory = __DIR__ . '../cache';
 $adapter = new Zoop\Juggernaut\Adapter\FileSystem($cacheDirectory);
 
 $pageCache = new Zoop\Juggernaut\Helper\FullPage($adapter, $pageTtl);
+$pageCache->start();
 ```
 You can use any of the provided adapters to store the full page cache. eg.
 ```php
@@ -113,7 +114,7 @@ $password='mymongopass';
 $adapter = new Zoop\Juggernaut\Adapter\MongoDB($database, $username, $password);
 
 $pageCache = new Zoop\Juggernaut\Helper\FullPage($adapter, $pageTtl);
-
+$pageCache->start();
 ```
 There's no need to manually save the rendered page to cache as the script will automatically flush the page output to the cache adapter once the script exits.
 #### Database

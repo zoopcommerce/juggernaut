@@ -16,7 +16,38 @@ class FullPage {
     private $auto = true;
     private $compress = true;
 
-    public function __construct(AdapterInterface $adapter = null, $ttl = 300, $auto = true) {
+    public function getAuto()
+    {
+        return $this->auto;
+    }
+
+    public function setAuto($auto)
+    {
+        $this->auto = (boolean) $auto;
+    }
+
+    public function getCompress()
+    {
+        return $this->compress;
+    }
+
+    public function setCompress($compress)
+    {
+        $this->compress = (boolean) $compress;
+    }
+
+    public function getAdapter()
+    {
+        return $this->adapter;
+    }
+
+    public function setAdapter(AdapterInterface $adapter)
+    {
+        $this->adapter = $adapter;
+    }
+
+    public function __construct(AdapterInterface $adapter = null, $ttl = 300, $auto = true, $compress = true)
+    {
         if (is_null($adapter)) {
             $this->adapter = new FileSystem();
         } else {
@@ -25,17 +56,21 @@ class FullPage {
         $this->adapter->setTtl($ttl);
 
         $this->auto = $auto;
-
-        if ($this->auto === true) {
-            $this->start();
-        }
+        $this->compress = $compress;
     }
 
-    public function setTtl($ttl) {
+    public function setTtl($ttl)
+    {
         $this->adapter->setTtl($ttl);
     }
 
-    public function start() {
+    public function start()
+    {
+        //Full page cache should only be used for a GET request
+        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+            throw new \Exception('Juggeranut full page cache helper should only be used for GET requests');
+        }
+
         $key = $this->getFileName();
         $cache = $this->adapter->getItem($key, $success);
 
@@ -50,7 +85,8 @@ class FullPage {
         }
     }
 
-    public function end() {
+    public function end()
+    {
         $html = ob_get_contents();
         if ($this->compress) {
             //remove new lines
@@ -62,12 +98,14 @@ class FullPage {
         ob_end_flush();
     }
 
-    public function setHandler(AdapterInterface $adapter) {
+    public function setHandler(AdapterInterface $adapter)
+    {
         $this->adapter = $adapter;
         return $this;
     }
 
-    private function getFileName() {
+    private function getFileName()
+    {
         if ((isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https')) {
             $protocol = 'https://';
         } else {
@@ -76,5 +114,4 @@ class FullPage {
         $fileName = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
         return $fileName;
     }
-
 }
