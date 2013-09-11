@@ -66,11 +66,6 @@ class FullPage {
 
     public function start()
     {
-        //Full page cache should only be used for a GET request
-        if ($_SERVER['REQUEST_METHOD'] != 'GET') {
-            throw new \Exception('Juggeranut full page cache helper should only be used for GET requests');
-        }
-
         $key = $this->getFileName();
         $cache = $this->adapter->getItem($key, $success);
 
