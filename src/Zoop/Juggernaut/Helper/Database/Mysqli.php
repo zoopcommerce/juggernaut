@@ -204,12 +204,18 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
 
     public function commitTransaction() {
         $this->transactionInProgress = false;
-        return $this->connection->commit();
+        $r = $this->connection->commit();
+        $this->connection->autocommit(true);
+        
+        return $r;
     }
 
     public function rollbackTransaction() {
         $this->transactionInProgress = false;
-        return $this->connection->rollback();
+        $r = $this->connection->rollback();
+        $this->connection->autocommit(true);
+        
+        return $r;
     }
 
     public function close() {
