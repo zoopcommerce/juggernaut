@@ -7,14 +7,10 @@
 
 namespace Zoop\Juggernaut\Adapter;
 
-interface AdapterInterface {
-
-    public function setItem($key, $value);
-
-    public function getItem($key, &$success = null, $queue = false);
-
+interface CacheFloodProtectionInterface
+{
     public function queue($key);
-    
+
     public function clearQueue($key = null);
 
     public function reCache($key);
@@ -22,8 +18,4 @@ interface AdapterInterface {
     public function isReCacheInProgress($key);
 
     public function isQueueInProgress($key);
-
-    public function normalizeKey(&$key);
-
-    public function setTtl($ttl);
 }

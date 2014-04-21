@@ -7,106 +7,159 @@
 
 namespace Zoop\Juggernaut\Helper;
 
-use Zoop\Juggernaut\Adapter\FileSystem;
-use Zoop\Juggernaut\Adapter\AdapterInterface;
+use Psr\Cache\CacheItemPoolInterface;
+use Psr\Cache\CacheItemInterface;
 
-class FullPage {
+class FullPage
+{
+    protected $cachePool;
+    protected $autoFlush = true;
+    protected $compress = true;
+    protected $ttl = 300;
+    protected $cacheItem;
 
-    private $adapter;
-    private $auto = true;
-    private $compress = true;
-
-    public function getAuto()
+    public function __construct(CacheItemPoolInterface $cachePool, $ttl = 300, $autoFlush = true, $compress = true)
     {
-        return $this->auto;
+        $this->setCachePool($cachePool);
+        $this->setAutoFlush($autoFlush);
+        $this->setCompress($compress);
+        $this->setTtl($ttl);
     }
 
-    public function setAuto($auto)
+    /**
+     * @return CacheItemPoolInterface
+     */
+    public function getCachePool()
     {
-        $this->auto = (boolean) $auto;
+        return $this->cachePool;
     }
 
+    /**
+     * @param CacheItemPoolInterface $cachePool
+     */
+    public function setCachePool(CacheItemPoolInterface $cachePool)
+    {
+        $this->cachePool = $cachePool;
+    }
+
+    /**
+     * @return CacheItemInterface
+     */
+    public function getCacheItem()
+    {
+        return $this->cacheItem;
+    }
+
+    /**
+     * @param CacheItemInterface $cacheItem
+     */
+    public function setCacheItem(CacheItemInterface $cacheItem)
+    {
+        $this->cacheItem = $cacheItem;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getAutoFlush()
+    {
+        return $this->autoFlush;
+    }
+
+    /**
+     * @param boolean $autoFlush
+     */
+    public function setAutoFlush($autoFlush)
+    {
+        $this->autoFlush = (boolean) $autoFlush;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTtl()
+    {
+        return $this->ttl;
+    }
+
+    /**
+     * Number of seconds for the cache to live
+     *
+     * @param int $ttl
+     */
+    public function setTtl($ttl)
+    {
+        $this->ttl = intval($ttl);
+    }
+
+    /**
+     * @return boolean
+     */
     public function getCompress()
     {
         return $this->compress;
     }
 
+    /**
+     * @param boolean $compress
+     */
     public function setCompress($compress)
     {
         $this->compress = (boolean) $compress;
     }
 
-    public function getAdapter()
-    {
-        return $this->adapter;
-    }
-
-    public function setAdapter(AdapterInterface $adapter)
-    {
-        $this->adapter = $adapter;
-    }
-
-    public function __construct(AdapterInterface $adapter = null, $ttl = 300, $auto = true, $compress = true)
-    {
-        if (is_null($adapter)) {
-            $this->adapter = new FileSystem();
-        } else {
-            $this->adapter = $adapter;
-        }
-        $this->adapter->setTtl($ttl);
-
-        $this->auto = $auto;
-        $this->compress = $compress;
-    }
-
-    public function setTtl($ttl)
-    {
-        $this->adapter->setTtl($ttl);
-    }
-
     public function start()
     {
-        $key = $this->getFileName();
-        $cache = $this->adapter->getItem($key, $success);
+        $key = $this->getKey();
+        $cacheItem = $this->getCachePool()->getItem($key);
 
-        if ($success === false) {
+        if ($cacheItem->isHit() === false) {
             ob_start();
-            if ($this->auto === true) {
+            if ($this->getAutoFlush() === true) {
+                $this->setCacheItem($cacheItem);
                 register_shutdown_function(array($this, 'end'));
             }
         } else {
-            echo $cache;
+            echo $cacheItem->get();
             exit(0);
         }
     }
 
     public function end()
     {
+        $cacheItem = $this->getCacheItem();
+
         $html = ob_get_contents();
-        if ($this->compress) {
+        if ($this->getCompress()) {
             //remove new lines
             $html = str_replace("\n", '', $html);
-            //remove double spaces
-            $html = preg_replace("/\s{2,}/", '', $html);
+            //remove whitespace
+            $html = preg_replace('~>\s+<~m', '><', $html);
         }
-        $this->adapter->setItem($this->getFileName(), $html);
+        $cacheItem->set($html, $this->getTtl());
+
         ob_end_flush();
     }
 
-    public function setHandler(AdapterInterface $adapter)
+    /**
+     * Creates a key from the current url
+     *
+     * @return string
+     */
+    protected function getKey()
     {
-        $this->adapter = $adapter;
-        return $this;
-    }
-
-    private function getFileName()
-    {
-        if ((isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https')) {
+        if ((
+                isset($_SERVER['HTTPS']) &&
+                strtolower(filter_input(INPUT_SERVER, 'HTTPS')) === 'on'
+            ) ||
+            (
+                isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &&
+                strtolower(filter_input(INPUT_SERVER, 'HTTP_X_FORWARDED_PROTO')) === 'https'
+        )) {
             $protocol = 'https://';
         } else {
             $protocol = 'http://';
         }
-        $fileName = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-        return $fileName;
+        return $protocol . filter_input(INPUT_SERVER, 'HTTP_HOST') . filter_input(INPUT_SERVER, 'REQUEST_URI');
     }
 }
