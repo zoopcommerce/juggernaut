@@ -50,6 +50,7 @@ if ($item->isHit()) {
 
     //save it to cache
     $item->set($data, new DateTime('+1 hour'));
+    $item->save();
     echo $data;
 } else {
     // cache value
@@ -73,6 +74,7 @@ if ($item->isHit()) {
 
     //save it to cache
     $item->set($data, new DateTime('+1 hour'));
+    $item->save();
     echo $data;
 } else {
     // cache value
@@ -99,6 +101,7 @@ if ($item->isHit()) {
 
     //save it to cache
     $item->set($data, new DateTime('+1 hour'));
+    $item->save();
     echo $data;
 } else {
     // cache value
@@ -139,6 +142,7 @@ if ($item->isHit()) {
 
     //save it to cache
     $item->set($data, new DateTime('+1 hour'));
+    $item->save();
     echo $data;
 } else {
     //check which pool the cache hit came from
