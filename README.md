@@ -23,72 +23,132 @@ Install the module using Composer into your application's vendor directory. Add 
 
 ## Usage
 
-You can use Juggernaut by directly instantiating a storage adapter and calling set/get.
+Juggernaut implements the proposed (but not yet accepted) PSR Cache specification: https://github.com/Crell/Cache
 
-### Key-Value-Pair Caching Using Storage Adapters
+### Key-Value-Pair Caching
 #### File System
 ```php
-// you should always store the cache below the web root for security!!
-$cacheDirectory = __DIR__ . '../cache';
+//coming soon
+```
+#### Memcached
+```php
+$memcached = new Memcached;
+$memcached->addServer('localhost', 11211);
 
-$cache = new Zoop\Juggernaut\Adapter\FileSystem($cacheDirectory);
+$cachePool = new Zoop\Juggernaut\Adapter\Memcached\MemcachedCachePool($memcached);
 
 $key = 'yourUniqueKey';
 
-$data = $cache->getItem($key, $success);
+$item = $pool->getItem($key);
 
 // check if cache hit/miss
-if ($success === false) {
-  // cache missed so now we have to execute
-	// some query that takes a long time
-	for($i=0;$i<1000000;$i++) {
-    	$data = rand(0, 10000);
-    }
+if ($item->isHit()) {
+    // cache missed so now we have to execute
+    // some query that takes a long time
+    sleep(1);
+    $data = rand(0, 10000);
 
-	//save it to cache
-    $cache->setItem($key, $data);
+    //save it to cache
+    $item->set($data, new DateTime('+1 hour'));
     echo $data;
 } else {
-	// cache hit!
+    // cache value
+    echo $item->get();
+}
+```
+#### Memory
+```php
+$cachePool = new Zoop\Juggernaut\Adapter\Memory\MemoryCachePool();
+
+$key = 'yourUniqueKey';
+
+$item = $pool->getItem($key);
+
+// check if cache hit/miss
+if ($item->isHit()) {
+    // cache missed so now we have to execute
+    // some query that takes a long time
+    sleep(1);
+    $data = rand(0, 10000);
+
+    //save it to cache
+    $item->set($data, new DateTime('+1 hour'));
     echo $data;
+} else {
+    // cache value
+    echo $item->get();
 }
 ```
 #### MongoDB
 ```php
-$database='MyMongoDb';
-$username='mymongouser';
-$password='mymongopass';
+$mongo = new MongoClient('mongodb://localhost:27017');
+$mongoCollection = $mongo->selectCollection('myDb', 'myCacheCollection');
 
-$cache = new Zoop\Juggernaut\Adapter\MongoDB($database, $username, $password);
+$cachePool = new Zoop\Juggernaut\Adapter\MongoDb\MongoDbCachePool($mongoCollection);
 
 $key = 'yourUniqueKey';
 
-$data = $cache->getItem($key, $success);
+$item = $pool->getItem($key);
 
 // check if cache hit/miss
-if ($success === false) {
-	// cache missed so now we have to execute
-	// some query that takes a long time
-	for($i=0;$i<1000000;$i++) {
-    	$data = rand(0, 10000);
-    }
+if ($item->isHit()) {
+    // cache missed so now we have to execute
+    // some query that takes a long time
+    sleep(1);
+    $data = rand(0, 10000);
 
-	//save it to cache
-    $cache->setItem($key, $data);
+    //save it to cache
+    $item->set($data, new DateTime('+1 hour'));
     echo $data;
 } else {
-	// cache hit!
-    echo $data;
+    // cache value
+    echo $item->get();
 }
-```
-#### Memcached
-```php
-//coming soon
 ```
 #### MySQL
 ```php
 //coming soon
 ```
+#### Chained
+You can chain cache pools together using the special `ChainedCachePool` class. This can be extremely useful for first checking fast local memory cache, then checking slower remote cache.
+```php
+$chainedCachePool = new Zoop\Juggernaut\Adapter\Chained\ChainedCachePool();
+
+$memoryPool = new Zoop\Juggernaut\Adapter\Memory\MemoryCachePool();
+
+$mongo = new MongoClient('mongodb://localhost:27017');
+$mongoCollection = $mongo->selectCollection('myDb', 'myCacheCollection');
+
+$mongoPool = new Zoop\Juggernaut\Adapter\MongoDb\MongoDbCachePool($mongoCollection);
+
+$chainedCachePool->addCachePool($memoryPool);
+$chainedCachePool->addCachePool($mongoPool);
+
+//now we can use it in the same way as before
+
+$key = 'yourUniqueKey';
+
+$item = $pool->getItem($key);
+
+// check if cache hit/miss
+if ($item->isHit()) {
+    // cache missed so now we have to execute
+    // some query that takes a long time
+    sleep(1);
+    $data = rand(0, 10000);
+
+    //save it to cache
+    $item->set($data, new DateTime('+1 hour'));
+    echo $data;
+} else {
+    //check which pool the cache hit came from
+    echo $item->getClass();
+
+    // cache value
+    echo $item->get();
+}
+```
+
 ### Helpers
 There are a few helpers that will expidite the usage of Juggernaut.
 #### Full Page
@@ -97,48 +157,25 @@ As the name suggests, the "Full Page" helper will store the rendered page direct
 To use this script just place the following at the top of your pages.
 ```php
 $pageTtl = 600; //10 mins
-$cacheDirectory = __DIR__ . '../cache';
+$cachePool = new Zoop\Juggernaut\Adapter\Memory\MemoryCachePool();
 
-$adapter = new Zoop\Juggernaut\Adapter\FileSystem($cacheDirectory);
-
-$pageCache = new Zoop\Juggernaut\Helper\FullPage($adapter, $pageTtl);
+$pageCache = new Zoop\Juggernaut\Helper\FullPage($cachePool, $pageTtl);
 $pageCache->start();
 ```
-You can use any of the provided adapters to store the full page cache. eg.
-```php
-$pageTtl = 600; //10 mins
-$database='MyMongoDb';
-$username='mymongouser';
-$password='mymongopass';
+You can use any of the provided cache pools to store the full page cache.
 
-$adapter = new Zoop\Juggernaut\Adapter\MongoDB($database, $username, $password);
-
-$pageCache = new Zoop\Juggernaut\Helper\FullPage($adapter, $pageTtl);
-$pageCache->start();
-```
-There's no need to manually save the rendered page to cache as the script will automatically flush the page output to the cache adapter once the script exits.
+There's no need to manually save the rendered page to cache, as the script will automatically flush the page output to the cache pool once the script exits.
 #### Database
 #### MySQLi
 You can use the mysqli helper to automatically cache your sql queries.
 ```php
-$cacheDirectory = __DIR__ . '../cache';
-$adapter = new Zoop\Juggernaut\Adapter\FileSystem($cacheDirectory);
-
-$db = new Zoop\Juggernaut\Helper\Database\Mysqli($cache);
-$db->connect($host, $username, $passwd, $database);
-
-$q="SELECT COUNT(`pageviews`) as 'pageviews' FROM `analytics` GROUP BY `date`";
-$r = $db->query($q, 600); //second arg is ttl
-if($r!==false) {
-	$pageviews = $db->fetchRow($q)['pageviews'];
-}
+//coming soon
 ```
 As you can see you don't have to worry if the cache exists or not as the helper does all the heavy lifting.
 
-
 ## Coming soon
-* Unit tests
-* Working examples
-* MySQL adapter
-* Memcached adapter
-* MongoDB helper
+* APC cache pool
+* File system cache pool
+* Mysqli cache pool
+* PDO cache pool
+* Reinstate flood protection
