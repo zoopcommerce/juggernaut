@@ -21,8 +21,7 @@
     ],
     "require": {
         "php": ">=5.4",
-        "psr/cache": "dev-master",
-        "zendframework/zend-serializer": "~2.3"
+        "psr/cache": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit": ">=3.7",

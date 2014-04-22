@@ -7,33 +7,8 @@
 
 namespace Zoop\Juggernaut\Adapter;
 
-use Zend\Serializer\Adapter\AdapterInterface;
-use Zend\Serializer\Adapter\PhpSerialize;
-
 trait CacheItemSerializerTrait
 {
-    protected $serializer;
-
-    /**
-     * @return AdapterInterface
-     */
-    public function getSerializer()
-    {
-        //set a default serializer if not set
-        if (!isset($this->serializer)) {
-            $this->setSerializer(new PhpSerialize);
-        }
-        return $this->serializer;
-    }
-
-    /**
-     * @param AdapterInterface $serializer
-     */
-    public function setSerializer(AdapterInterface $serializer)
-    {
-        $this->serializer = $serializer;
-    }
-
     /**
      * Takes in data returning serialized data
      *
@@ -42,7 +17,7 @@ trait CacheItemSerializerTrait
      */
     public function serialize($data)
     {
-        return $this->getSerializer()->serialize($data);
+        return serialize($data);
     }
 
     /**
@@ -54,6 +29,6 @@ trait CacheItemSerializerTrait
      */
     public function unserialize($data)
     {
-        return $this->getSerializer()->unserialize($data);
+        return unserialize($data);
     }
 }
