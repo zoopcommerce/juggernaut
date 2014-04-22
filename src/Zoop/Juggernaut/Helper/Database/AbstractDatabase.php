@@ -4,9 +4,8 @@ namespace Zoop\Juggernaut\Helper\Database;
 
 use Zoop\Juggernaut\Adapter\AdapterInterface;
 
-abstract class AbstractDatabase {
-    /* @var $adapter AdapterInterface */
-
+abstract class AbstractDatabase
+{
     protected $adapter = null;
     protected $log = array();
     protected $errors = array();
@@ -14,24 +13,52 @@ abstract class AbstractDatabase {
     protected $displayErrors = false;
     protected $totalExecutionTime = 0;
 
-    public function setAdapter(AdapterInterface $handler) {
+    /**
+     * 
+     * @return AdapterInterface
+     */
+    public function getAdapter()
+    {
+        return $this->adapter;
+    }
+
+    public function getLogQueries()
+    {
+        return $this->logQueries;
+    }
+
+    public function getDisplayErrors()
+    {
+        return $this->displayErrors;
+    }
+
+    public function getTotalExecutionTime()
+    {
+        return $this->totalExecutionTime;
+    }
+
+    public function setAdapter(AdapterInterface $handler)
+    {
         $this->adapter = $handler;
         $this->adapter->setNamespace('sql');
 
         return $this;
     }
 
-    public function setLogQueries($allowLog) {
+    public function setLogQueries($allowLog)
+    {
         $this->logQueries = (bool) $allowLog;
         return $this;
     }
 
-    public function setDisplayErrors($displayErrors) {
+    public function setDisplayErrors($displayErrors)
+    {
         $this->displayErrors = (bool) $displayErrors;
         return $this;
     }
 
-    protected function addError($query) {
+    protected function addError($query)
+    {
         $this->errors[] = [
             'query' => $query,
             'error' => $this->connection->error
@@ -39,11 +66,13 @@ abstract class AbstractDatabase {
         return $this;
     }
 
-    public function getErrors() {
+    public function getErrors()
+    {
         return $this->errors;
     }
 
-    public function getLog($orderBy = 'execution') {
+    public function getLog($orderBy = 'execution')
+    {
         $queries = array();
         $time = array();
         $data = $this->log;

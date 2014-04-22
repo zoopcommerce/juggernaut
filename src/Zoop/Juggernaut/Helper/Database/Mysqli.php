@@ -39,12 +39,12 @@ class Mysqli extends AbstractDatabase implements DatabaseInterface {
             $port = !empty($port) ? intval($port) : 3306;
             $this->connection = new db($host, $user, $password, $database, $port);
             if ($this->connection->connect_errno) {
-                die("Failed to connect to MySQL: " . $this->connection->connect_error);
+                throw new Exception("Failed to connect to MySQL: " . $this->connection->connect_error);
             } else {
                 $this->connection->set_charset("utf8");
             }
         } catch (Exception $e) {
-            die('Cannot connect to the database');
+            throw new Exception('Cannot connect to the database');
         }
     }
 
