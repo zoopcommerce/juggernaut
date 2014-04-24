@@ -76,7 +76,7 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
                 $success = false;
             }
 
-            if ($this->getCascadeDelete() === false) {
+            if ($this->hasCascadeDelete() === false) {
                 break;
             }
         }
@@ -102,7 +102,7 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
                 $success = false;
             }
 
-            if ($this->getCascadeWrite() === false) {
+            if ($this->hasCascadeWrite() === false) {
                 break;
             }
         }
@@ -141,7 +141,7 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
                 $success = false;
             }
 
-            if ($this->getCascadeWrite() === false) {
+            if ($this->hasCascadeWrite() === false) {
                 break;
             }
         }
@@ -178,7 +178,7 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
     /**
      * @return boolean
      */
-    public function getCascadeDelete()
+    public function hasCascadeDelete()
     {
         return $this->cascadeDelete;
     }
@@ -186,7 +186,7 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
     /**
      * @return boolean
      */
-    public function getCascadeWrite()
+    public function hasCascadeWrite()
     {
         return $this->cascadeWrite;
     }

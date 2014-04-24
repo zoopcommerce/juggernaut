@@ -7,7 +7,7 @@
 
 namespace Zoop\Juggernaut\Adapter;
 
-interface CacheFloodProtectionInterface
+interface FloodProtectionInterface
 {
     public function queue($key);
 
@@ -15,7 +15,7 @@ interface CacheFloodProtectionInterface
 
     public function reCache($key);
 
-    public function isReCacheInProgress($key);
+    public function isReCaching($key);
 
-    public function isQueueInProgress($key);
+    public function isQueued($key);
 }

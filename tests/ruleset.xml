@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<ruleset name="Juggernaut php" xmlns="http://pmd.sf.net/ruleset/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd" xsi:noNamespaceSchemaLocation=" http://pmd.sf.net/ruleset_xml_schema.xsd">
+    <description> My custom rule set that checks my code... </description>
+    <rule ref="rulesets/design.xml/NumberOfChildren">
+        <priority>1</priority>
+        <properties>
+            <property name="minimum" value="50" />
+        </properties>
+    </rule>
+    <rule ref="rulesets/naming.xml/ShortVariable">
+        <priority>3</priority>
+        <properties>
+            <property name="minimum" value="2" />
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml" />
+    <rule ref="rulesets/controversial.xml" />
+    <rule ref="rulesets/design.xml">
+        <exclude name="NumberOfChildren" />
+    </rule>
+    <rule ref="rulesets/naming.xml">
+        <exclude name="ShortVariable" />
+    </rule>
+    <rule ref="rulesets/unusedcode.xml" />
+</ruleset>

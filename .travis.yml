@@ -1,0 +1,29 @@
+language: php
+
+php:
+  - 5.4
+  - 5.5
+
+env:
+  - MONGO_VERSION=1.2.12
+
+services:
+  - mongodb
+  - mysql
+  - memcached
+  - redis-server
+
+matrix:
+  allow_failures:
+    - php: 5.5
+
+before_script:
+  - mysql -e 'create database juggernaut_test;'
+  - echo "extension = mongo.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - composer install --dev
+
+script:
+  - ./vendor/bin/phpunit --coverage-clover ./build/clover.xml
+  - php ./build/coverage-checker.php ./build/clover.xml 85
+  - ./vendor/bin/phpmd ./lib/ text ./tests/ruleset.xml
+  - ./vendor/bin/phpcs --standard=PSR2 ./lib ./tests

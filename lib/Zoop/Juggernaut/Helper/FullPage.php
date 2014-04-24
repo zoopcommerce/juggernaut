@@ -61,7 +61,7 @@ class FullPage
     /**
      * @return boolean
      */
-    public function getAutoFlush()
+    public function hasAutoFlush()
     {
         return $this->autoFlush;
     }
@@ -95,7 +95,7 @@ class FullPage
     /**
      * @return boolean
      */
-    public function getCompress()
+    public function hasCompress()
     {
         return $this->compress;
     }
@@ -108,6 +108,11 @@ class FullPage
         $this->compress = (boolean) $compress;
     }
 
+    /**
+     * Starts the output buffer and print if cache hit
+     *
+     * @SuppressWarnings(PHPMD.ExitExpression)
+     */
     public function start()
     {
         $key = $this->getKey();
@@ -115,7 +120,7 @@ class FullPage
 
         if ($cacheItem->isHit() === false) {
             ob_start();
-            if ($this->getAutoFlush() === true) {
+            if ($this->hasAutoFlush() === true) {
                 $this->setCacheItem($cacheItem);
                 register_shutdown_function(array($this, 'end'));
             }
@@ -125,12 +130,15 @@ class FullPage
         }
     }
 
+    /**
+     * Catches the page output
+     */
     public function end()
     {
         $cacheItem = $this->getCacheItem();
 
         $html = ob_get_contents();
-        if ($this->getCompress()) {
+        if ($this->hasCompress()) {
             //remove new lines
             $html = str_replace("\n", '', $html);
             //remove whitespace
@@ -148,14 +156,10 @@ class FullPage
      */
     protected function getKey()
     {
-        if ((
-                isset($_SERVER['HTTPS']) &&
-                strtolower(filter_input(INPUT_SERVER, 'HTTPS')) === 'on'
-            ) ||
-            (
-                isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &&
-                strtolower(filter_input(INPUT_SERVER, 'HTTP_X_FORWARDED_PROTO')) === 'https'
-        )) {
+        $httpForwarded = filter_input(INPUT_SERVER, 'HTTP_X_FORWARDED_PROTO');
+        $https = filter_input(INPUT_SERVER, 'HTTPS');
+
+        if (strtolower($https) === 'on' || strtolower($httpForwarded) === 'https') {
             $protocol = 'https://';
         } else {
             $protocol = 'http://';
