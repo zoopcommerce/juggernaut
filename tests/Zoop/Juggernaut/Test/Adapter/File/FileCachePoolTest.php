@@ -10,7 +10,6 @@ use Zoop\Juggernaut\Adapter\File\FileCacheItem;
 
 class FileCachePoolTest extends BaseTest
 {
-
     const DIRECTORY = 'data/temp';
 
     public function tearDown()
@@ -154,9 +153,9 @@ class FileCachePoolTest extends BaseTest
         $item->save();
 
         $this->assertTrue($this->getNumberOfFiles() === 1);
-        
+
         $pool->clear();
-        
+
         $this->assertTrue($this->getNumberOfFiles() === 0);
     }
 
@@ -180,5 +179,4 @@ class FileCachePoolTest extends BaseTest
         }
         return $i;
     }
-
 }

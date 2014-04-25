@@ -128,11 +128,11 @@ class MongoDbCachePool extends AbstractCachePool implements
                     'upsert' => true,
                 ]
             );
-        
-        if($this->hasFloodProtection() === true) {
+
+        if ($this->hasFloodProtection() === true) {
             $this->clearQueue($key);
         }
-        
+
         if (!$result['ok']) {
             return false;
         }
@@ -166,14 +166,14 @@ class MongoDbCachePool extends AbstractCachePool implements
     protected function find($key)
     {
         /* @var $cursor MongoCursor */
-        $find = function() use ($key) {
+        $find = function () use ($key) {
             $data = $this->getMongoCollection()->findOne(['_id' => $key]);
             if (!isset($data)) {
                 return false;
             }
             return $data;
         };
-        
+
         $data = $find();
         if ($data !== false) {
             $cacheTtd = new DateTime($data['ttd']['date']);
@@ -189,7 +189,7 @@ class MongoDbCachePool extends AbstractCachePool implements
             if ($this->isQueued($key) === true) {
                 //wait and retry
                 $data = $this->wait($find);
-                if($data !== false) {
+                if ($data !== false) {
                     return new MongoDbCacheItem($this, $key, $this->unserialize($data['value']), true);
                 }
             } else {
@@ -200,10 +200,10 @@ class MongoDbCachePool extends AbstractCachePool implements
 
         return false;
     }
-    
+
     /**
      * Queues the current cache key
-     * 
+     *
      * @param string $key
      */
     public function queue($key)
@@ -221,23 +221,23 @@ class MongoDbCachePool extends AbstractCachePool implements
 
     /**
      * Clears the queueing entries
-     * 
+     *
      * @param string|null $key
      */
     public function clearQueue($key = null)
     {
-        $queued = is_null($key) ? new MongoRegex('/.*\.' . self::$QUEUED . '/') : $this->getQueueKey($key);
-        $recache = is_null($key) ? new MongoRegex('/.*\.' . self::$RECACHE . '/') : $this->getReCacheKey($key);
-        
+        $queuedSuffix = is_null($key) ? new MongoRegex('/.*\.' . self::$queuedSuffix . '/') : $this->getQueueKey($key);
+        $reCacheSuffix = is_null($key) ? new MongoRegex('/.*\.' . self::$reCacheSuffix . '/') : $this->getReCacheKey($key);
+
         $this->getMongoCollection()
-            ->remove(['_id' => $queued]);
+            ->remove(['_id' => $queuedSuffix]);
         $this->getMongoCollection()
-            ->remove(['_id' => $recache]);
+            ->remove(['_id' => $reCacheSuffix]);
     }
-    
+
     /**
      * Enters the recache entry
-     * 
+     *
      * @param string $key
      */
     public function reCache($key)
@@ -255,7 +255,7 @@ class MongoDbCachePool extends AbstractCachePool implements
 
     /**
      * Checks if we are recached
-     * 
+     *
      * @param string $key
      * @return boolean
      */
@@ -265,7 +265,7 @@ class MongoDbCachePool extends AbstractCachePool implements
             ->findOne([
                 '_id' => $this->getReCacheKey($key)
             ]);
-        if(isset($cursor)) {
+        if (isset($cursor)) {
             return true;
         }
         return false;
@@ -273,7 +273,7 @@ class MongoDbCachePool extends AbstractCachePool implements
 
     /**
      * Checks if we are queued
-     * 
+     *
      * @param string $key
      * @return boolean
      */
@@ -283,7 +283,7 @@ class MongoDbCachePool extends AbstractCachePool implements
             ->findOne([
                 '_id' => $this->getQueueKey($key)
             ]);
-        if(isset($cursor)) {
+        if (isset($cursor)) {
             return true;
         }
         return false;

@@ -41,7 +41,7 @@ class MemoryCachePoolTest extends BaseTest
         $this->assertInstanceOf('Zoop\Juggernaut\Adapter\Memory\MemoryCacheItem', $item);
         $this->assertEquals($key, $item->getKey());
         $this->assertTrue($item->isHit());
-        
+
         //cached value
         $cachedValue = $item->get();
         $this->assertEquals($value, $cachedValue);

@@ -20,13 +20,13 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
     protected $cascadeClear = true;
     protected $cascadeDelete = true;
     protected $cascadeWrite = true;
-    
+
     protected static $defaultOptions = [
         'cascadeClear' => true,
         'cascadeDelete' => true,
         'cascadeWrite' => true,
     ];
-    
+
     public function __construct($cascadeClear = true, $cascadeDelete = true, $cascadeWrite = true)
     {
         $this->setCascadeClear($cascadeClear);
@@ -34,7 +34,7 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
         $this->setCascadeWrite($cascadeWrite);
     }
 
-    
+
     /**
      * {@inheritdoc}
      */
@@ -55,15 +55,15 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
      */
     protected function getItemFromCachePools($key)
     {
-        $i = 0;
+        $num = 0;
         /* @var $cachePool CacheItemPoolInterface */
         foreach ($this->getCachePools() as $entry) {
             $cacheItem = $entry['pool']->getItem($key);
             if ($cacheItem->isHit() === true) {
-                if ($i !== 0) {
+                if ($num !== 0) {
                     //save to the pools lower in the stack
                 }
-                
+
                 return new ChainedCacheItem(
                     $this,
                     $key,
@@ -73,7 +73,7 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
                     get_class($cacheItem)
                 );
             }
-            $i++;
+            $num++;
         }
 
         return false;
@@ -93,10 +93,10 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
 
         /* @var $cachePool CacheItemPoolInterface */
         foreach ($this->getCachePools() as $entry) {
-            if($entry['options']['cascadeClear'] === false) {
+            if ($entry['options']['cascadeClear'] === false) {
                 continue;
             }
-            
+
             if ($entry['pool']->clear() === false) {
                 $success = false;
             }
@@ -123,10 +123,10 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
 
         /* @var $cachePool CacheItemPoolInterface */
         foreach ($this->getCachePools() as $entry) {
-            if($entry['options']['cascadeDelete'] === false) {
+            if ($entry['options']['cascadeDelete'] === false) {
                 continue;
             }
-            
+
             if ($entry['pool']->delete($key) === false) {
                 $success = false;
             }
@@ -166,10 +166,10 @@ class ChainedCachePool extends AbstractCachePool implements CacheItemPoolInterfa
 
         /* @var $cachePool CacheItemPoolInterface */
         foreach ($this->getCachePools() as $entry) {
-            if($entry['options']['cascadeWrite'] === false) {
+            if ($entry['options']['cascadeWrite'] === false) {
                 continue;
             }
-            
+
             if ($entry['pool']->write($key, $value, $expiration) === false) {
                 $success = false;
             }

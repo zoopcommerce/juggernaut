@@ -20,7 +20,8 @@ class MongoDbCachePoolTest extends BaseTest
         $this->setMongoCollection(
             $this->getMongoClient()
                 ->selectCollection(
-                    self::$MONGO_DATABASE, self::$MONGO_COLLECTION
+                    self::$MONGO_DATABASE,
+                    self::$MONGO_COLLECTION
                 )
         );
     }
@@ -62,7 +63,7 @@ class MongoDbCachePoolTest extends BaseTest
         $this->assertInstanceOf('Zoop\Juggernaut\Adapter\MongoDb\MongoDbCacheItem', $item);
         $this->assertEquals($key, $item->getKey());
         $this->assertTrue($item->isHit());
-        
+
         //cached value
         $cachedValue = $item->get();
         $this->assertEquals($value, $cachedValue);
@@ -182,7 +183,7 @@ class MongoDbCachePoolTest extends BaseTest
 
         $queued = $pool->isQueued($key);
         $this->assertTrue($queued);
-        
+
         //get cache using the proper process.
         //this will use the exponential backoff queue
         $item = $pool->getItem($key);

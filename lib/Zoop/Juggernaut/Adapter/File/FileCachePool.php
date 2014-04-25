@@ -39,7 +39,7 @@ class FileCachePool extends AbstractCachePool implements
     }
 
     /**
-     * 
+     *
      * @return string
      */
     public function getDirectory()
@@ -140,7 +140,7 @@ class FileCachePool extends AbstractCachePool implements
     protected function find($key)
     {
         /* @var $cursor MongoCursor */
-        $find = function() use ($key) {
+        $find = function () use ($key) {
             $file = $this->getDirectory() . '/' . $key;
             if (is_file($file)) {
                 return $this->unserialize(file_get_contents($file));
@@ -152,7 +152,7 @@ class FileCachePool extends AbstractCachePool implements
         if ($data !== false) {
             $cacheTtd = new DateTime();
             $cacheTtd->setTimestamp(intval($data['ttd']));
-            
+
             $now = new DateTime();
 
             if ($cacheTtd > $now || ($this->hasFloodProtection() === true && $this->isReCaching($key) === true)) {
@@ -179,7 +179,7 @@ class FileCachePool extends AbstractCachePool implements
 
     /**
      * Queues the current cache key
-     * 
+     *
      * @param string $key
      */
     public function queue($key)
@@ -193,13 +193,13 @@ class FileCachePool extends AbstractCachePool implements
 
     /**
      * Clears the queueing entries
-     * 
+     *
      * @param string|null $key
      */
     public function clearQueue($key = null)
     {
         if (is_null($key)) {
-            $pattern = $this->getDirectory() . '/*.{' . self::$QUEUED . ',' . self::$RECACHE . '}';
+            $pattern = $this->getDirectory() . '/*.{' . self::$queuedSuffix . ',' . self::$reCacheSuffix . '}';
             foreach (glob($pattern, GLOB_BRACE) as $file) {
                 $this->deleteFile($file);
             }
@@ -211,7 +211,7 @@ class FileCachePool extends AbstractCachePool implements
 
     /**
      * Enters the recache entry
-     * 
+     *
      * @param string $key
      */
     public function reCache($key)
@@ -225,19 +225,19 @@ class FileCachePool extends AbstractCachePool implements
 
     /**
      * Checks if we are recached
-     * 
+     *
      * @param string $key
      * @return boolean
      */
     public function isReCaching($key)
     {
-        $reCacheFile = $this->getDirectory() . '/' . $this->getReCacheKey($key);
-        if (is_file($reCacheFile)) {
-            $ttl = file_get_contents($reCacheFile);
+        $reCacheSuffixFile = $this->getDirectory() . '/' . $this->getReCacheKey($key);
+        if (is_file($reCacheSuffixFile)) {
+            $ttl = file_get_contents($reCacheSuffixFile);
             if ($ttl > time()) {
                 return true;
             } else {
-                $this->deleteFile($reCacheFile);
+                $this->deleteFile($reCacheSuffixFile);
             }
         }
         return false;
@@ -245,7 +245,7 @@ class FileCachePool extends AbstractCachePool implements
 
     /**
      * Checks if we are queued
-     * 
+     *
      * @param string $key
      * @return boolean
      */
@@ -271,5 +271,4 @@ class FileCachePool extends AbstractCachePool implements
         }
         return $result;
     }
-
 }

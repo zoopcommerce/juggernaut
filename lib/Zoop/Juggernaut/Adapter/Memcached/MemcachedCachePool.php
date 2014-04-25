@@ -98,11 +98,11 @@ class MemcachedCachePool extends AbstractCachePool implements
                 $value,
                 $expiration->getTimestamp()
             );
-        
-        if($this->hasFloodProtection() === true) {
+
+        if ($this->hasFloodProtection() === true) {
             $this->clearQueue($key);
         }
-        
+
         return $result;
     }
 
@@ -124,10 +124,10 @@ class MemcachedCachePool extends AbstractCachePool implements
      */
     protected function find($key)
     {
-        $find = function() use ($key) {
+        $find = function () use ($key) {
             $data = $this->getMemcached()
                 ->get($this->normalizeKey($key));
-            
+
             if (!isset($data)) {
                 return false;
             }
@@ -141,7 +141,7 @@ class MemcachedCachePool extends AbstractCachePool implements
             if ($this->isQueued($key) === true) {
                 //wait and retry
                 $data = $this->wait($find);
-                if($data !== false) {
+                if ($data !== false) {
                     return new MongoDbCacheItem($this, $key, $data, true);
                 }
             } else {
@@ -166,17 +166,17 @@ class MemcachedCachePool extends AbstractCachePool implements
         }
         return $normalized;
     }
-    
+
     /**
      * Queues the current cache key
-     * 
+     *
      * @param string $key
      */
     public function queue($key)
     {
         try {
             $expiration = new DateTime('+' . $this->getQueueTtl() . 's');
-            
+
             $this->getMemcached()
                 ->set(
                     $this->getQueueKey($this->normalizeKey($key)),
@@ -190,12 +190,12 @@ class MemcachedCachePool extends AbstractCachePool implements
 
     /**
      * Clears the queueing entries
-     * 
+     *
      * @param string|null $key
      */
     public function clearQueue($key = null)
     {
-        if(!empty($key)) {
+        if (!empty($key)) {
             $this->getMemcached()->deleteMulti([
                 $this->getReCacheKey($this->normalizeKey($key)),
                 $this->getQueueKey($this->normalizeKey($key))
@@ -204,29 +204,29 @@ class MemcachedCachePool extends AbstractCachePool implements
             //this is expensive so avoid doing it if possible
             $deleteKeys = [];
             $allKeys = $this->getMemcached()->getAllKeys();
-            
+
             foreach ($allKeys as $key) {
-                if (preg_match('/.*\.(' . self::$QUEUED . '|' . self::$RECACHE . ')/', $key)) {
+                if (preg_match('/.*\.(' . self::$queuedSuffix . '|' . self::$reCacheSuffix . ')/', $key)) {
                     $deleteKeys[] = $key;
                 }
             }
-            
-            if(!empty($deleteKeys)) {
-                $this->getMemcached()->deleteMulti($deleteKeys); 
+
+            if (!empty($deleteKeys)) {
+                $this->getMemcached()->deleteMulti($deleteKeys);
             }
         }
     }
-    
+
     /**
      * Enters the recache entry
-     * 
+     *
      * @param string $key
      */
     public function reCache($key)
     {
         try {
             $expiration = new DateTime('+' . $this->getReCacheTtl() . 's');
-            
+
             $this->getMemcached()
                 ->set(
                     $this->getReCacheKey($this->normalizeKey($key)),
@@ -240,7 +240,7 @@ class MemcachedCachePool extends AbstractCachePool implements
 
     /**
      * Checks if we are recached
-     * 
+     *
      * @param string $key
      * @return boolean
      */
@@ -248,7 +248,7 @@ class MemcachedCachePool extends AbstractCachePool implements
     {
         $value = $this->getMemcached()
             ->get($this->getReCacheKey($this->normalizeKey($key)));
-        if(!empty($value)) {
+        if (!empty($value)) {
             return true;
         }
         return false;
@@ -256,7 +256,7 @@ class MemcachedCachePool extends AbstractCachePool implements
 
     /**
      * Checks if we are queued
-     * 
+     *
      * @param string $key
      * @return boolean
      */
@@ -264,7 +264,7 @@ class MemcachedCachePool extends AbstractCachePool implements
     {
         $value = $this->getMemcached()
             ->get($this->getQueueKey($this->normalizeKey($key)));
-        if(!empty($value)) {
+        if (!empty($value)) {
             return true;
         }
         return false;
