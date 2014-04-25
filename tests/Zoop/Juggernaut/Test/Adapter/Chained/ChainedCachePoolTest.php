@@ -97,8 +97,8 @@ class ChainedCachePoolTest extends BaseTest
         $pools = $multi->getCachePools();
 
         /* @var $pool CacheItemPoolInterface */
-        foreach ($pools as $pool) {
-            $item = $pool->getItem($key);
+        foreach ($pools as $entry) {
+            $item = $entry['pool']->getItem($key);
             $this->assertTrue($item->isHit());
             $this->assertEquals($value, $item->get());
         }

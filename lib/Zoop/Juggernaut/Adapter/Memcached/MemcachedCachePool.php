@@ -17,17 +17,24 @@ use Zoop\Juggernaut\Adapter\CacheItemSerializerTrait;
 use Zoop\Juggernaut\Adapter\Memcached\MemcachedCacheItem;
 use Zoop\Juggernaut\Adapter\Memcached\MemcachedNormalizeKeyTrait;
 use Zoop\Juggernaut\Adapter\NormalizedKeyInterface;
+use Zoop\Juggernaut\Adapter\FloodProtectionInterface;
+use Zoop\Juggernaut\Adapter\FloodProtectionTrait;
 
-class MemcachedCachePool extends AbstractCachePool implements CacheItemPoolInterface, NormalizedKeyInterface
+class MemcachedCachePool extends AbstractCachePool implements
+    CacheItemPoolInterface,
+    NormalizedKeyInterface,
+    FloodProtectionInterface
 {
     use CacheItemSerializerTrait;
     use MemcachedNormalizeKeyTrait;
+    use FloodProtectionTrait;
 
     protected $memcached;
 
-    public function __construct(Memcached $memcached)
+    public function __construct(Memcached $memcached, $floodProtection = true)
     {
         $this->setMemcached($memcached);
+        $this->setFloodProtection($floodProtection);
     }
 
     /**
@@ -85,12 +92,18 @@ class MemcachedCachePool extends AbstractCachePool implements CacheItemPoolInter
      */
     public function write($key, $value, DateTime $expiration)
     {
-         return $this->getMemcached()
+        $result = $this->getMemcached()
             ->set(
                 $this->normalizeKey($key),
                 $value,
                 $expiration->getTimestamp()
             );
+        
+        if($this->hasFloodProtection() === true) {
+            $this->clearQueue($key);
+        }
+        
+        return $result;
     }
 
     /**
@@ -111,11 +124,30 @@ class MemcachedCachePool extends AbstractCachePool implements CacheItemPoolInter
      */
     protected function find($key)
     {
-        $value = $this->getMemcached()
-            ->get($this->normalizeKey($key));
+        $find = function() use ($key) {
+            $data = $this->getMemcached()
+                ->get($this->normalizeKey($key));
+            
+            if (!isset($data)) {
+                return false;
+            }
+            return $data;
+        };
 
-        if ($value !== false) {
-            return new MemcachedCacheItem($this, $key, $value, true);
+        $data = $find();
+        if ($data !== false) {
+            return new MemcachedCacheItem($this, $key, $data, true);
+        } elseif ($this->hasFloodProtection() === true) {
+            if ($this->isQueued($key) === true) {
+                //wait and retry
+                $data = $this->wait($find);
+                if($data !== false) {
+                    return new MongoDbCacheItem($this, $key, $data, true);
+                }
+            } else {
+                //start the queuing process
+                $this->queue($key);
+            }
         }
         return false;
     }
@@ -133,5 +165,108 @@ class MemcachedCachePool extends AbstractCachePool implements CacheItemPoolInter
             $normalized[] = $this->normalizeKey($key);
         }
         return $normalized;
+    }
+    
+    /**
+     * Queues the current cache key
+     * 
+     * @param string $key
+     */
+    public function queue($key)
+    {
+        try {
+            $expiration = new DateTime('+' . $this->getQueueTtl() . 's');
+            
+            $this->getMemcached()
+                ->set(
+                    $this->getQueueKey($this->normalizeKey($key)),
+                    '',
+                    $expiration->getTimestamp()
+                );
+        } catch (MongoCursorException $e) {
+            //nothing to see here. We already have the document inserted.
+        }
+    }
+
+    /**
+     * Clears the queueing entries
+     * 
+     * @param string|null $key
+     */
+    public function clearQueue($key = null)
+    {
+        if(!empty($key)) {
+            $this->getMemcached()->deleteMulti([
+                $this->getReCacheKey($this->normalizeKey($key)),
+                $this->getQueueKey($this->normalizeKey($key))
+            ]);
+        } else {
+            //this is expensive so avoid doing it if possible
+            $deleteKeys = [];
+            $allKeys = $this->getMemcached()->getAllKeys();
+            
+            foreach ($allKeys as $key) {
+                if (preg_match('/.*\.(' . self::$QUEUED . '|' . self::$RECACHE . ')/', $key)) {
+                    $deleteKeys[] = $key;
+                }
+            }
+            
+            if(!empty($deleteKeys)) {
+                $this->getMemcached()->deleteMulti($deleteKeys); 
+            }
+        }
+    }
+    
+    /**
+     * Enters the recache entry
+     * 
+     * @param string $key
+     */
+    public function reCache($key)
+    {
+        try {
+            $expiration = new DateTime('+' . $this->getReCacheTtl() . 's');
+            
+            $this->getMemcached()
+                ->set(
+                    $this->getReCacheKey($this->normalizeKey($key)),
+                    '',
+                    $expiration->getTimestamp()
+                );
+        } catch (MongoCursorException $e) {
+            //nothing to see here. We already have the document inserted.
+        }
+    }
+
+    /**
+     * Checks if we are recached
+     * 
+     * @param string $key
+     * @return boolean
+     */
+    public function isReCaching($key)
+    {
+        $value = $this->getMemcached()
+            ->get($this->getReCacheKey($this->normalizeKey($key)));
+        if(!empty($value)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Checks if we are queued
+     * 
+     * @param string $key
+     * @return boolean
+     */
+    public function isQueued($key)
+    {
+        $value = $this->getMemcached()
+            ->get($this->getQueueKey($this->normalizeKey($key)));
+        if(!empty($value)) {
+            return true;
+        }
+        return false;
     }
 }

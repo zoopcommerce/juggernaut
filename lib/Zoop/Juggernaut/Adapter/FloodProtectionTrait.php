@@ -70,12 +70,11 @@ trait FloodProtectionTrait
         do {
             usleep($this->queueWaitPeriod + ($this->queueWaitPeriod * pow(2, $numTries)));
             $numTries++;
-
             if ($numTries >= $this->maxQueueTries) {
                 return false;
             }
-        } while ($conditionFunction());
-        return true;
+        } while (($return = $conditionFunction()) === false);
+        return $return;
     }
 
     /**

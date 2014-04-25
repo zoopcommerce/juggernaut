@@ -67,7 +67,11 @@ abstract class AbstractCacheItem
      */
     public function save()
     {
-        return $this->write($this->key, $this->value, $this->expiration);
+        $return = $this->write($this->key, $this->value, $this->expiration);
+        if($return === true) {
+            $this->setIsHit(true);
+        }
+        return $return;
     }
 
     /**

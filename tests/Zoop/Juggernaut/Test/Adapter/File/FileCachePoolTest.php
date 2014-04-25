@@ -1,47 +1,61 @@
 <?php
 
-namespace Zoop\Juggernaut\Test\Adapter\Memory;
+namespace Zoop\Juggernaut\Test\Adapter\File;
 
 use \DateTime;
-use \ReflectionClass;
 use \stdClass;
 use Zoop\Juggernaut\Test\BaseTest;
-use Zoop\Juggernaut\Adapter\Memory\MemoryCachePool;
-use Zoop\Juggernaut\Adapter\Memory\MemoryCacheItem;
+use Zoop\Juggernaut\Adapter\File\FileCachePool;
+use Zoop\Juggernaut\Adapter\File\FileCacheItem;
 
-class MemoryCachePoolTest extends BaseTest
+class FileCachePoolTest extends BaseTest
 {
+
+    const DIRECTORY = 'data/temp';
+
+    public function tearDown()
+    {
+        parent::tearDown();
+        $pool = new FileCachePool($this->getDirectory());
+        $pool->clear();
+    }
+
+    protected function getDirectory()
+    {
+        return __DIR__ . '/../../../../../../' . self::DIRECTORY;
+    }
+
     public function testCacheMiss()
     {
         $key = 'cache miss';
-        $pool = new MemoryCachePool();
+        $pool = new FileCachePool($this->getDirectory());
 
         $item = $pool->getItem($key);
 
-        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\Memory\MemoryCacheItem', $item);
+        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\File\FileCacheItem', $item);
         $this->assertEquals($key, $item->getKey());
         $this->assertFalse($item->isHit());
     }
 
     public function testSimpleCacheHit()
     {
-        $pool = new MemoryCachePool();
+        $pool = new FileCachePool($this->getDirectory());
         $key = 'simple cache hit';
         $value = [
             'subValue' => rand(100, 1000)
         ];
 
         //save cache into mongo
-        $item = new MemoryCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
+        $item = new FileCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
         $item->save();
         unset($item);
 
         $item = $pool->getItem($key);
 
-        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\Memory\MemoryCacheItem', $item);
+        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\File\FileCacheItem', $item);
         $this->assertEquals($key, $item->getKey());
         $this->assertTrue($item->isHit());
-        
+
         //cached value
         $cachedValue = $item->get();
         $this->assertEquals($value, $cachedValue);
@@ -50,7 +64,7 @@ class MemoryCachePoolTest extends BaseTest
 
     public function testObjectCacheHit()
     {
-        $pool = new MemoryCachePool();
+        $pool = new FileCachePool($this->getDirectory());
         $key = 'object cache hit';
 
         $value = new stdClass;
@@ -60,13 +74,13 @@ class MemoryCachePoolTest extends BaseTest
         $value->boolean = false;
 
         //save cache into mongo
-        $item = new MemoryCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
+        $item = new FileCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
         $item->save();
         unset($item);
 
         $item = $pool->getItem($key);
 
-        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\Memory\MemoryCacheItem', $item);
+        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\File\FileCacheItem', $item);
         $this->assertEquals($key, $item->getKey());
         $this->assertTrue($item->isHit());
 
@@ -82,40 +96,40 @@ class MemoryCachePoolTest extends BaseTest
 
     public function testStaleCacheMiss()
     {
-        $pool = new MemoryCachePool();
+        $pool = new FileCachePool($this->getDirectory());
         $key = 'stale cache miss';
         $value = [
             'subValue' => rand(100, 1000)
         ];
 
         //save cache into mongo
-        $item = new MemoryCacheItem($pool, $key, $value, true, new DateTime('-1 Hour'));
+        $item = new FileCacheItem($pool, $key, $value, true, new DateTime('-1 Hour'));
         $item->save();
         unset($item);
 
         $item = $pool->getItem($key);
 
-        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\Memory\MemoryCacheItem', $item);
+        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\File\FileCacheItem', $item);
         $this->assertEquals($key, $item->getKey());
         $this->assertFalse($item->isHit());
     }
 
     public function testDeleteCache()
     {
-        $pool = new MemoryCachePool();
+        $pool = new FileCachePool($this->getDirectory());
         $key = 'cache hit 2';
         $value = [
             'subValue' => rand(100, 1000)
         ];
 
         //save cache into mongo
-        $item = new MemoryCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
+        $item = new FileCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
         $item->save();
         unset($item);
 
         $item = $pool->getItem($key);
 
-        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\Memory\MemoryCacheItem', $item);
+        $this->assertInstanceOf('Zoop\Juggernaut\Adapter\File\FileCacheItem', $item);
         $this->assertEquals($key, $item->getKey());
         $this->assertTrue($item->isHit());
 
@@ -129,26 +143,42 @@ class MemoryCachePoolTest extends BaseTest
 
     public function testClearCache()
     {
-        $pool = new MemoryCachePool();
+        $pool = new FileCachePool($this->getDirectory());
         $key = 'cache hit 2';
         $value = [
             'subValue' => rand(100, 1000)
         ];
 
         //save cache into mongo
-        $item = new MemoryCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
+        $item = new FileCacheItem($pool, $key, $value, true, new DateTime('+1 Hour'));
         $item->save();
-        unset($item);
 
-        $reflectPool = new ReflectionClass($pool);
-        $property = $reflectPool->getProperty('data');
-        $property->setAccessible(true);
-        $data = $property->getValue($pool);
-
-        $this->assertCount(1, $data);
-
+        $this->assertTrue($this->getNumberOfFiles() === 1);
+        
         $pool->clear();
-        $data = $property->getValue($pool);
-        $this->assertCount(0, $data);
+        
+        $this->assertTrue($this->getNumberOfFiles() === 0);
     }
+
+    public function testQueuingProcess()
+    {
+        //to do
+    }
+
+    public function testRecachingProcess()
+    {
+        //to do
+    }
+
+    protected function getNumberOfFiles()
+    {
+        $i = 0;
+        foreach (glob($this->getDirectory() . '/*') as $file) {
+            if (is_file($file)) {
+                $i++;
+            }
+        }
+        return $i;
+    }
+
 }
