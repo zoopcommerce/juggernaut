@@ -28,7 +28,28 @@ Juggernaut implements the proposed (but not yet accepted) PSR Cache specificatio
 ### Key-Value-Pair Caching
 #### File System
 ```php
-//coming soon
+$dir = __DIR__ . '/data/cache';
+$cachePool = new Zoop\Juggernaut\Adapter\File\FileCachePool($dir);
+
+$key = 'yourUniqueKey';
+
+$item = $pool->getItem($key);
+
+// check if cache hit/miss
+if ($item->isHit()) {
+    // cache missed so now we have to execute
+    // some query that takes a long time
+    sleep(1);
+    $data = rand(0, 10000);
+
+    //save it to cache
+    $item->set($data, new DateTime('+1 hour'));
+    $item->save();
+    echo $data;
+} else {
+    // cache value
+    echo $item->get();
+}
 ```
 #### Memcached
 ```php
