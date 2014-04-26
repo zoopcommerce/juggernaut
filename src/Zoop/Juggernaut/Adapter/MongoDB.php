@@ -7,37 +7,44 @@
 
 namespace Zoop\Juggernaut\Adapter;
 
-use \MongoClient;
 use \MongoCursorException;
-use \MongoId;
 use \MongoRegex;
+use \MongoCollection;
 
-class MongoDB extends AbstractAdapter implements AdapterInterface {
+class MongoDB extends AbstractAdapter implements AdapterInterface
+{
+    private $mongoCollection;
 
-    private $mongo;
-    private $database;
-    private $collection = 'Cache';
-    private $username = '';
-    private $password = '';
-    private $server = 'localhost';
-    private $port = '27017';
-
-    public function __construct($database, $username = '', $password = '', $server = 'localhost', $port = '27017') {
-        $this->database = $database;
-        $this->username = $username;
-        $this->password = $password;
-        $this->server = $server;
-        $this->port = $port;
+    public function __construct(MongoCollection $mongoCollection)
+    {
+        $this->setMongoCollection($mongoCollection);
     }
 
-    public function setItem($key, $value) {
+    /**
+     * @return MongoCollection
+     */
+    public function getMongoCollection()
+    {
+        return $this->mongoCollection;
+    }
+
+    /**
+     * @param MongoCollection $mongoCollection
+     */
+    public function setMongoCollection(MongoCollection $mongoCollection)
+    {
+        $this->mongoCollection = $mongoCollection;
+    }
+
+    public function setItem($key, $value)
+    {
         //save the value to the local class cache
         parent::setItem($key, $value);
 
         $id = $key;
         $this->normalizeKey($id);
 
-        $this->mongo()->update(
+        $this->getMongoCollection()->update(
                 array('_id' => $id), array(
             '_id' => $id,
             'ttl' => $this->ttl + time(),
@@ -48,7 +55,8 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         $this->removeTempFiles($id);
     }
 
-    public function getItem($key, &$success = null, $queue = true) {
+    public function getItem($key, &$success = null, $queue = true)
+    {
         //check to see if it's already been cached in the class
         $value = parent::getItem($key, $success, $queue);
 
@@ -64,13 +72,13 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
             if ($queue === true && is_null($cache)) {
                 if ($this->isQueueInProgress($id) === true) {
                     //anonymous function to test if we should continue to wait
-                    $mongo = $this->mongo();
+                    $mongo = $this->getMongoCollection();
                     $condition = function() use ($mongo, $id) {
-                                $cache = $mongo->findOne(array(
-                                    '$id' => $id
-                                ));
-                                return !is_null($cache);
-                            };
+                        $cache = $mongo->findOne(array(
+                            '$id' => $id
+                        ));
+                        return !is_null($cache);
+                    };
 
                     $wait = $this->wait($condition);
                     if ($wait === false) {
@@ -105,15 +113,17 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function getFromMongo($id) {
-        return $this->mongo()->findOne(array(
+    public function getFromMongo($id)
+    {
+        return $this->getMongoCollection()->findOne(array(
                     '_id' => $id
         ));
     }
 
-    public function queue($key) {
+    public function queue($key)
+    {
         try {
-            $this->mongo()->insert(array(
+            $this->getMongoCollection()->insert(array(
                 '_id' => $this->getQueuedId($key),
                 'ttl' => (time() + $this->queueTtl)
             ));
@@ -122,9 +132,10 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function reCache($key) {
+    public function reCache($key)
+    {
         try {
-            $this->mongo()->insert(array(
+            $this->getMongoCollection()->insert(array(
                 '_id' => $this->getReCacheId($key),
                 'ttl' => (time() + $this->reCacheTtl)
             ));
@@ -133,10 +144,11 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
         }
     }
 
-    public function isReCacheInProgress($key) {
+    public function isReCacheInProgress($key)
+    {
         $key = $this->getReCacheId($key);
 
-        $reCache = $this->mongo()->findOne(array(
+        $reCache = $this->getMongoCollection()->findOne(array(
             '$id' => $key
         ));
 
@@ -144,16 +156,17 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
             if ($reCache['ttl'] > time()) {
                 return true;
             } else {
-                $this->mongo()->remove(array('$id' => $key));
+                $this->getMongoCollection()->remove(array('$id' => $key));
             }
         }
         return false;
     }
 
-    public function isQueueInProgress($key) {
+    public function isQueueInProgress($key)
+    {
         $key = $this->getQueuedId($key);
 
-        $reCache = $this->mongo()->findOne(array(
+        $reCache = $this->getMongoCollection()->findOne(array(
             '$id' => $key
         ));
 
@@ -161,46 +174,30 @@ class MongoDB extends AbstractAdapter implements AdapterInterface {
             if ($reCache['ttl'] > time()) {
                 return true;
             } else {
-                $this->mongo()->remove(array('$id' => $key));
+                $this->getMongoCollection()->remove(array('$id' => $key));
             }
         }
         return false;
     }
 
-    private function mongo() {
-        if (empty($this->mongo)) {
-            $db = $this->connect();
-            $this->mongo = $db->selectCollection($this->collection);
-        }
-        return $this->mongo;
-    }
-
-    private function connect() {
-        if (!empty($this->username) && !empty($this->password)) {
-            $connection = new MongoClient('mongodb://' . $this->username . ':' . $this->password . '@' . $this->server . ':' . $this->port);
-        } else {
-            $connection = new MongoClient('mongodb://' . $this->server . ':' . $this->port);
-        }
-        return $connection->selectDB($this->database);
-    }
-
-    private function removeTempFiles($id) {
+    private function removeTempFiles($id)
+    {
         $qId = $this->getQueuedId($id);
         $rId = $this->getReCacheId($id);
 
-        $this->mongo()->remove(array('_id' => $qId));
-        $this->mongo()->remove(array('_id' => $rId));
+        $this->getMongoCollection()->remove(array('_id' => $qId));
+        $this->getMongoCollection()->remove(array('_id' => $rId));
     }
 
-    public function clearQueue($key = null) {
+    public function clearQueue($key = null)
+    {
         if (is_null($key)) {
-            $this->mongo()->remove(array('_id' => new MongoRegex('/.*\.' . self::QUEUING_ID . '/')));
-            $this->mongo()->remove(array('_id' => new MongoRegex('/.*\.' . self::RECACHE_ID . '/')));
+            $this->getMongoCollection()->remove(array('_id' => new MongoRegex('/.*\.' . self::QUEUING_ID . '/')));
+            $this->getMongoCollection()->remove(array('_id' => new MongoRegex('/.*\.' . self::RECACHE_ID . '/')));
         } else {
             $id = $key;
             $this->normalizeKey($id);
             $this->removeTempFiles($id);
         }
     }
-
 }
