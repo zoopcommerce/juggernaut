@@ -55,11 +55,11 @@ if ($success === false) {
 ```
 #### MongoDB
 ```php
-$database='MyMongoDb';
-$username='mymongouser';
-$password='mymongopass';
 
-$cache = new Zoop\Juggernaut\Adapter\MongoDB($database, $username, $password);
+$mongo = new MongoClient('mongodb://username:password@localhost:27017');
+$collection = $mongo->selectCollection('Cache');
+
+$cache = new Zoop\Juggernaut\Adapter\MongoDB($collection);
 
 $key = 'yourUniqueKey';
 
