@@ -13,8 +13,8 @@ trait FloodProtectionTrait
     protected static $reCacheSuffix = 'recache';
     protected $queueWaitPeriod = 50000; /* 50ms */
     protected $maxQueueTries = 5;
-    protected $reCacheSuffixTtl = 10; /* 10s */
     protected $queueTtl = 10; /* 10s */
+    protected $reCacheTtl = 10; /* 10s */
     protected $floodProtection = true;
 
     /**
@@ -99,11 +99,11 @@ trait FloodProtectionTrait
 
     /**
      *
-     * @param int $reCacheSuffixTtl
+     * @param int $reCacheTtl
      */
-    public function setReCacheTtl($reCacheSuffixTtl)
+    public function setReCacheTtl($reCacheTtl)
     {
-        $this->reCacheTtl = intval($reCacheSuffixTtl);
+        $this->reCacheTtl = intval($reCacheTtl);
     }
 
     /**
